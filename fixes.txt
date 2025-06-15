@@ -1,0 +1,15 @@
+URGENTES:
+***DATA ABORT!: el código funciona bien en emulador, NO en hardware real. posiblemente porque se está llenando la memoria por cargar TODOS los sprites de un personaje a la vez tanto a la VRAM como a la RAM. el chiste es que es por una wea de la memoria que estoy manejando mal por webon.
+posibles soluciones: 
+-manejar los sprites en memoria de manera 'dinámica'. es decir, cargar un sprite a la memoria SÓLO cuando se ocupe, y acto seguido, liberar ese espacio de memoria una vez que no se use. me imagino que usará más procesador, pero ni modo que la DS no pueda si es algo que muchos devs deben de usar lol.
+-checar formatos, tipos de variables y weas (por incompatibilidades): puede ser que se corrompa la memoria (aunque no creo) por usar strings tipo C (char[]), que causen algun memory leak u oveflow
+---(dudo fuertemente que sea esto porque en sí cargar el sprite sí que funciona)---
+
+NO TAN URGENTES:
+***ORGANIZAR LA ESTRUCTURA: sé que es algo muy general, pero básicamente es eso. debe de haber mejores formas de estructurar las clases, organizar las variables y todo ello para que sea más legible más que nada el código.
+EJEMPLOS:
+-sprite ''id'': en el código uso un número que identifique a un sprite, por ejemplo: quieto o idle = 0, y ese mismo 0 lo uso para el slot de RAM, de VRAM, el ''id'' de las funciones de NFLIB. SOLUCION: por puro orden, tener cada una de estas variables separadas, aunque a lo mejor y el valor sea el mismo (0 por ejemplo), en un struct quizá.
+-clases: hasta ahorita sólo llevo 2 clases (Character y Sprite, siendo esta última un atributo de la primera, como la lógica podría decir), pero por weba no he hecho cosas como: hacer 'private' los atributos y crear los getters y setters, crear constructores DE VERDAD con los parámetros que se necesiten, y en general no mezclar la lógica del propio personaje (movimiento por ejemplo) y la impresión en pantalla.
+
+***NO TENER MIEDO DE SEGUIR: tal cual. esto es algo que quiero hacer para tener tema de plática, para decir ''lo hice'', bla bla bla... pero principalmente para saber cómo es trabajar en un proyecto de software que sea un poco más ''aplicable'' (que no sea como los programas que haces cuando apenas aprendes programación que probablemente en tu vida vayas a volver a hacer de manera práctica), para aprender más del lenguaje con el que estoy más familiarizado (C, C++), para conocer un poco más de lógica de videojuegos PURA (quizá no tan de bajo nivel, pues para eso ocuparía usar sólo libnds por ejemplo, pero sí más bajo nivel que usar Unity o GameMaker por ejemplo), y también porque me mama la DS y nada me hace más ilusión que ver algo funcionando en esa pantallita que YO mismo programé desde 0.
+algo personal esto pero es la neta, para que cuando lea esto en el futuro (si es  que lo hago) recuerde como me sentía y vea que he mejorado realmente (más vale).
