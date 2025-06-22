@@ -33,6 +33,7 @@ class Sprite{
 	int anim = 0;
 	int anim_frame = 0;
 	int anim_frame_speed[CHAR_NUM_SPRITES];
+	int anim_direction = 1;
 	int n_frames[CHAR_NUM_SPRITES];
     int anim_status = 0;
 	int past_anim_status = 0;
@@ -98,10 +99,10 @@ class Sprite{
 	NF_FreeSpriteGfx(screen, id);
 	NF_UnloadSpriteGfx(id);
 	NF_UnloadSpritePal(id);
-	NF_VramSpriteGfxDefrag(screen);
 
 	}
 
+	//Cambia un sprite de pantalla, con la misma posicion relativa con la que se quedo.
 	void changeScreen(){
 	    if (pos_y >= CHAR_SCREEN_SIZE)
 			pos_y = CHAR_SCREEN_SIZE - pos_y;
@@ -127,10 +128,10 @@ class Sprite{
     void animateSprite(){
 		if (animated){
 		//Animacion del sprite.
-		anim++;
+		anim += anim_direction;
 		if(anim >= anim_frame_speed[anim_status]){
 			anim = 0;
-			anim_frame ++;
+			anim_frame++;
 			if(anim_frame > n_frames[anim_status]){
 				anim_frame = 0;
 			}
@@ -162,14 +163,16 @@ class Character{
 	//Atributos. (lo mismo, luego los hago privados :D)
 	public:
 	char name[10];
-	int vel_x;
-	int vel_y;
+	float vel_x;
+	float vel_y;
 	float acc_x = 0;
 	float acc_y = 0;
 	int status; //0.IDLE,1.WALK,2.RUN.
 	int frames_moving = 0;
 	int frames_jumping = 0;
 	bool jumping = false;
+	int jump_start_pos = 0;
+	int jump_final_pos = 0;
 	bool canDTap = false;
 	bool canRun = false;
 	int lastTapTime = 0;    // Guardará el tiempo del último toque
@@ -226,28 +229,45 @@ class Character{
 		case RUN:
 		vel_x = 5;
 		vel_y = 5; break;
+
 		case JUMP:
+		if(!jumping)
+		{
+		sprite.anim_frame = 0;
+		jumping = true;
+		jump_start_pos = sprite.pos_y;
+		vel_y = -6.7;
+		}
+		
 		if(jumping)
 		frames_jumping++;
-		if(frames_jumping <= 60)
+
+		if(frames_jumping >= 1 && jumping)
 		{
-		/*
-		acc_y = 1;
+		acc_y = 0.3;
 		vel_y += acc_y;
 		sprite.pos_y += vel_y;
-		*/
 	    }
-		else if(frames_jumping > 30 && frames_jumping <= 60)
+
+		if(vel_y <= 0 && vel_y >= -0.5)
 		{
-		/*
-		acc_y = -1;
-		vel_y += acc_y;
-		sprite.pos_y += vel_y;
-		*/
-		if(frames_jumping > 60)
+			if(sprite.anim_frame == 1 || sprite.anim_frame == 3)
+			sprite.anim_direction *= -1;
+		}
+		else
+		{
+			sprite.anim_direction = 1;
+		}
+
+	    if(sprite.pos_y >= jump_start_pos)
+		{
+		sprite.anim_frame = 12;
+		jump_final_pos = sprite.pos_y;
+		sprite.pos_y -= (jump_final_pos - jump_start_pos);
 		frames_jumping = 0;
 		jumping = false;
-		} break;
+		}
+		break;
 	
 	}
 	//Entradas de teclas del usuario para mover al personaje.
@@ -276,21 +296,17 @@ class Character{
 	}
 	if(keysCurrent() == KEY_A || jumping){
 		status = JUMP;
-		sprite.size_y = 128;
-		jumping = true;
 	}
     
 	//Determina si hubo un cambio en el estado o 'status'.
-	if(sprite.past_anim_status != sprite.anim_status){
-		sprite.anim_status_changed = true;
-	}
-	else{
-		sprite.anim_status_changed = false;
-	}
+	sprite.anim_status_changed = (sprite.past_anim_status != sprite.anim_status);
+
+	//DESCOMENTAR PARA PERMITIR CAMBIAR PANTALLA//
+	/*
 	if (sprite.pos_y >= CHAR_SCREEN_SIZE || sprite.pos_y <= -30)
 	 sprite.changeScreen();
+	*/
 	}
-
 	//Constructor
 	Character(int initial_pos_x, int initial_pos_y){
 		sprite.pos_x = initial_pos_x;
@@ -316,14 +332,18 @@ int main() {
 		std::cout<<"Hubo un error D:";
 	}
     //Se inicializa el modo de graficos '0' en la pantalla de arriba.
-	NF_Set2D(0, 0);
-	NF_Set2D(0, 1);
-	NF_Set2D(1, 0);
+	NF_Set2D(0, 0);//(screen, mode).
+
+	//DESCOMENTAR PARA PERMITIR CAMBIAR PANTALLA.//
+	//NF_Set2D(1, 0);
+	
 
     //Se prepara todo lo relacionado al sistema de sprites.
 	NF_InitSpriteBuffers();
 	NF_InitSpriteSys(0); //'0' se refiere a la pantalla, en este caso es la superior.
-	NF_InitSpriteSys(1);
+
+	//DESCOMENTAR PARA PERMITIR CAMBIAR PANTALLA.//
+	//NF_InitSpriteSys(1);
 
 	//Se crea al personaje "kim".
 	Character kim(50, 50);
@@ -341,7 +361,7 @@ int main() {
 	kim.sprite.anim_frame_speed[IDLE] = 8;
 	kim.sprite.anim_frame_speed[WALK] = 8;
 	kim.sprite.anim_frame_speed[RUN] = 5;
-	kim.sprite.anim_frame_speed[JUMP] = 15;
+	kim.sprite.anim_frame_speed[JUMP] = 6;
 	kim.sprite.sprite_name = "kim";
 	kim.sprite.screen = 0;
 	//Se llaman a los metodos que alistan el sprite.
@@ -377,6 +397,8 @@ int main() {
 		kim.sprite.animateSprite();
 		kim.moveCharacter();
 
+
+		//CONSOLE DEBUG//
 		if(keysCurrent() == KEY_B)
 		{
 		consoleClear();
@@ -385,8 +407,25 @@ int main() {
 		if(kim.sprite.anim_status_changed)
 		std::cout << "\nCAMBIO";
 
+		if(kim.jumping || keysCurrent() == KEY_A)
+		{
+		consoleClear();
+		std::cout << "FRAMES SALTANDO: " << kim.frames_jumping;
+		}
+		
+		consoleClear();
+		if(kim.sprite.anim_status_changed)
+		std::cout << "\n\nCAMBIO";
+		
+		std::cout << "\nSTART POS: " << kim.jump_start_pos
+		          << "\nCURRENT POS: " << kim.sprite.pos_y
+				  << "\nSTATUS: " << kim.status;
+		
+		//DESCOMENTAR PARA PERMITIR CAMBIAR PANTALLA.//
+		/*
 		if(keysDown() == KEY_X)
 		kim.sprite.changeScreen();
+		*/
 
 		//Update NF OAM Settings
 		NF_SpriteOamSet(0);
