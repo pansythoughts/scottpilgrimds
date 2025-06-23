@@ -14,12 +14,19 @@ constexpr uint8_t CHAR_NUM_SPRITES = 4; //CAMBIAR ESTO CADA QUE SE AGREGUE OTRO 
 constexpr uint8_t CHAR_SCREEN_SIZE = 190;
 
 enum CHAR_SPRITE_SIZE {CHAR_DEFAULT_WIDTH = 64, CHAR_DEFAULT_LENGTH = 64};
-enum CHAR_SPRITE_ANIMATION_STATES {IDLE = 0, WALK = 1, RUN = 2, JUMP = 3};
+enum CHAR_SPRITE_ANIMATION_STATES {A_IDLE = 0, A_WALK = 1, A_RUN = 2, A_JUMP = 3};
+enum CHAR_SPRITE_PRIMARY_STATES {P_IDLE = 0, P_WALK = 1, P_RUN = 2};
+enum CHAR_SPRITE_SECONDARY_STATES {S_NONE = 0, S_JUMP = 1};
+
 
 
 //Variables globales.//
 
 bool nfInit;
+int key_pressed = 0;
+int key_held = 0;
+int key_current = 0;
+int key_down_repeat = 0;
 
 //Clases//
 
@@ -32,7 +39,7 @@ class Sprite{
 	bool animated = false;
 	int anim = 0;
 	int anim_frame = 0;
-	int anim_frame_speed[CHAR_NUM_SPRITES];
+	int anim_frame_period[CHAR_NUM_SPRITES];
 	int anim_direction = 1;
 	int n_frames[CHAR_NUM_SPRITES];
     int anim_status = 0;
@@ -61,16 +68,16 @@ class Sprite{
 	sprite_dir[i] = "sprite/" + sprite_name;	
 	palette_dir[i] = "palette/" + sprite_name;
 	switch(i){
-		case IDLE:
+		case A_IDLE:
 		sprite_dir[i] += "_idl";
 		palette_dir[i] += "_idl"; break;
-		case WALK:
+		case A_WALK:
 		sprite_dir[i] += "_walk";
 		palette_dir[i] += "_walk"; break;
-		case RUN:
+		case A_RUN:
 		sprite_dir[i] += "_run";
 		palette_dir[i] += "_run"; break;
-		case JUMP:
+		case A_JUMP:
 		sprite_dir[i] += "_jump";
 		palette_dir[i] += "_jump"; break;
 	}
@@ -129,7 +136,7 @@ class Sprite{
 		if (animated){
 		//Animacion del sprite.
 		anim += anim_direction;
-		if(anim >= anim_frame_speed[anim_status]){
+		if(anim >= anim_frame_period[anim_status]){
 			anim = 0;
 			anim_frame++;
 			if(anim_frame > n_frames[anim_status]){
@@ -163,11 +170,12 @@ class Character{
 	//Atributos. (lo mismo, luego los hago privados :D)
 	public:
 	char name[10];
-	float vel_x;
-	float vel_y;
+	float vel_x = 0;
+	float vel_y = 0;
 	float acc_x = 0;
 	float acc_y = 0;
-	int status; //0.IDLE,1.WALK,2.RUN.
+	int primary_status = 0; //0.IDLE,1.WALK,2.RUN.
+	int secondary_status = 0; //0.NONE,1.JUMP.
 	int frames_moving = 0;
 	int frames_jumping = 0;
 	bool jumping = false;
@@ -191,7 +199,7 @@ class Character{
 		canRun = canDTap && (frames_moving - lastTapTime <= doubleTapThreshold);
 		// Si se detecta un segundo toque dentro del tiempo límite, activa el correr
 		if (canRun)
-			status = RUN;
+			primary_status = P_RUN;
 		}
 		// Si se ha soltado la tecla, intentamos registrar el primer toque
 		 if (keysUp() == KEY_LEFT || keysUp() == KEY_RIGHT) {
@@ -207,30 +215,58 @@ class Character{
 		}
 		//Si no puede harcer 'double tap' o esta yendo hacia arriba o abajo, camina.
 		if(!canDTap && ((keysHeld() == KEY_UP) || (keysHeld() == KEY_DOWN) || (keysHeld() == KEY_LEFT) ||(keysHeld() == KEY_RIGHT)))
-			status = WALK;
+			primary_status = P_WALK;
 	}
 
+	//Maneja lo relacionado al movimiento del personaje.
 	void moveCharacter(){
-	//Se pasa el valor de 'status' del objeto 'Character', al objeto 'Sprite' dentro de el.
-	sprite.anim_status = status;
+	//Se maneja el estado (o animacion) del sprite.
+	if(secondary_status == S_NONE)
+	{
+	switch(primary_status)
+	{
+		case P_IDLE:
+		sprite.anim_status = A_IDLE; break;
+		case P_WALK:
+		sprite.anim_status = A_WALK; break;
+		case P_RUN:
+		sprite.anim_status = A_RUN; break;
+	}
+    }
+	else
+	{
+		switch(secondary_status)
+		{
+			case S_JUMP:
+		    sprite.anim_status = A_JUMP; break;
+		}
+	}
     //Maneja todo lo relacionado al doble tap para correr.
 	doubleTap();
-	//Se maneja la velocidad del personaje segun sus estados.
-	switch (status){
+	//Se maneja la velocidad del personaje segun sus estados primarios.
+	switch (primary_status)
+	{
 		//Quieto (idle).
-		case IDLE:
-		vel_x = 0;
-		vel_y = 0; break;
+		case P_IDLE:
+		break;
 		//Caminando (walking).
-		case WALK:
+		case P_WALK:
 		vel_x = 2;
-		vel_y = 2; break;
+		if(secondary_status == S_NONE)
+		vel_y = 2;
+		 break;
 		//Corriendo (running).
-		case RUN:
+		case P_RUN:
 		vel_x = 5;
-		vel_y = 5; break;
+		if(secondary_status == S_NONE)
+		vel_y = 5;
+		break;
+	}
 
-		case JUMP:
+	//Se maneja la logica de los estados secundarios.
+	switch (secondary_status)
+	{
+		case S_JUMP:
 		if(!jumping)
 		{
 		sprite.anim_frame = 0;
@@ -268,34 +304,40 @@ class Character{
 		jumping = false;
 		}
 		break;
-	
+
 	}
+	
 	//Entradas de teclas del usuario para mover al personaje.
-	if(keysHeld() == KEY_LEFT){
+	if(key_current & KEY_LEFT){
 		sprite.pos_x -= vel_x;
 		NF_HflipSprite(0, 0, true);
 		NF_HflipSprite(0, sprite.id, true);
 		sprite.flipped = true;
 	}
-	if(keysHeld() == KEY_RIGHT){
+	else if(key_current & KEY_RIGHT){
 		sprite.pos_x += vel_x;
 		NF_HflipSprite(0, 0, false);
 		NF_HflipSprite(0, sprite.id, false);
 		sprite.flipped = false;
 	}
-	if(keysHeld() == KEY_DOWN){
-		status = WALK;
+	else if(key_current & KEY_DOWN){
+		primary_status = P_WALK;
 		sprite.pos_y += vel_y;
 	}
-	if(keysHeld() == KEY_UP){
-		status = WALK;
+	else if(key_current & KEY_UP){
+		primary_status = P_WALK;
 		sprite.pos_y -= vel_y;
 	}
-	if(keysHeld() == 0){
-		status = IDLE;
+	else{
+		primary_status = P_IDLE;
 	}
-	if(keysCurrent() == KEY_A || jumping){
-		status = JUMP;
+
+	if(key_pressed & KEY_A || jumping){
+		secondary_status = S_JUMP;
+	}
+	else
+	{
+		secondary_status = S_NONE;
 	}
     
 	//Determina si hubo un cambio en el estado o 'status'.
@@ -351,17 +393,17 @@ int main() {
 	//(luego creare un constructor que incluya toda la wea de abajo).
 	kim.sprite.animated = true;
 	kim.sprite.id = 0;
-	kim.sprite.anim_status = IDLE;
-	kim.status = IDLE;
+	kim.sprite.anim_status = A_IDLE;
+	kim.primary_status = P_IDLE;
 	kim.sprite.ram_slot = 0;
-	kim.sprite.n_frames[IDLE] = 3;
-	kim.sprite.n_frames[WALK] = 5;
-	kim.sprite.n_frames[RUN] = 7;
-	kim.sprite.n_frames[JUMP] = 12;
-	kim.sprite.anim_frame_speed[IDLE] = 8;
-	kim.sprite.anim_frame_speed[WALK] = 8;
-	kim.sprite.anim_frame_speed[RUN] = 5;
-	kim.sprite.anim_frame_speed[JUMP] = 6;
+	kim.sprite.n_frames[A_IDLE] = 3;
+	kim.sprite.n_frames[A_WALK] = 5;
+	kim.sprite.n_frames[A_RUN] = 7;
+	kim.sprite.n_frames[A_JUMP] = 12;
+	kim.sprite.anim_frame_period[A_IDLE] = 8;
+	kim.sprite.anim_frame_period[A_WALK] = 8;
+	kim.sprite.anim_frame_period[A_RUN] = 5;
+	kim.sprite.anim_frame_period[A_JUMP] = 6;
 	kim.sprite.sprite_name = "kim";
 	kim.sprite.screen = 0;
 	//Se llaman a los metodos que alistan el sprite.
@@ -386,6 +428,11 @@ int main() {
 
 		//Se registran los inputs del usuario.
 		scanKeys();
+		keysSetRepeat(1,1);
+		key_down_repeat = keysDownRepeat();
+		key_pressed = keysDown();
+		key_held = keysHeld();
+		key_current = keysCurrent();
 
 		//Metodos para actualizar el sprite cada frame.
 		if(kim.sprite.anim_status_changed){
@@ -419,7 +466,9 @@ int main() {
 		
 		std::cout << "\nSTART POS: " << kim.jump_start_pos
 		          << "\nCURRENT POS: " << kim.sprite.pos_y
-				  << "\nSTATUS: " << kim.status;
+				  << "\nSTATUS PRINCIPAL: " << kim.primary_status
+				  << "\nSTATUS SECUNDARIO: " << kim.secondary_status
+				  << "\nFRAMES SALTANDO: " << kim.frames_jumping;
 		
 		//DESCOMENTAR PARA PERMITIR CAMBIAR PANTALLA.//
 		/*
