@@ -23,6 +23,7 @@ enum CHAR_SPRITE_SECONDARY_STATES {S_NONE = 0, S_JUMP = 1};
 //Variables globales.//
 
 bool nfInit;
+bool second_screen_enabled = false; //Cambiar esto para permitir todo lo de cambiar pantallas.
 int key_pressed = 0;
 int key_held = 0;
 int key_current = 0;
@@ -54,8 +55,8 @@ class Sprite{
 	std::string sprite_dir[CHAR_NUM_SPRITES]; //Un espacio para cada sprite del personaje.
 	std::string palette_dir[CHAR_NUM_SPRITES];
 	int screen = 0;
-	int pos_x = 0;
-	int pos_y = 0;
+	int screen_pos_x = 0;
+	int screen_pos_y = 0;
 	int size_x = CHAR_DEFAULT_WIDTH;
 	int size_y = CHAR_DEFAULT_LENGTH;
 	bool flipped = false;
@@ -111,23 +112,23 @@ class Sprite{
 
 	//Cambia un sprite de pantalla, con la misma posicion relativa con la que se quedo.
 	void changeScreen(){
-	    if (pos_y >= CHAR_SCREEN_SIZE)
-			pos_y = CHAR_SCREEN_SIZE - pos_y;
-		else if (pos_y <= -30)
-		    pos_y = CHAR_SCREEN_SIZE + pos_y;
+	    if (screen_pos_y >= CHAR_SCREEN_SIZE)
+			screen_pos_y = CHAR_SCREEN_SIZE - screen_pos_y;
+		else if (screen_pos_y <= -30)
+		    screen_pos_y = CHAR_SCREEN_SIZE + screen_pos_y;
 			
 			NF_DeleteSprite(screen, id);
 		    freeSpritesMemory();
 		    if (screen == 0) screen = 1;
 		    else screen = 0;
 		    assignSpritesMemory();
-		    NF_CreateSprite(screen, id, id, id, pos_x, pos_y);
+		    NF_CreateSprite(screen, id, id, id, screen_pos_x, screen_pos_y);
 	}
 
     //Crea un sprite.
     void createSprite(){
     //Mostrando el sprite en pantalla.
-	NF_CreateSprite(screen, id, id, id, pos_x, pos_y);//(screen, RAM Slot, VRAM slot SPRITE, VRAM slot PALETTE, pos x, pos y)
+	NF_CreateSprite(screen, id, id, id, screen_pos_x, screen_pos_y);//(screen, RAM Slot, VRAM slot SPRITE, VRAM slot PALETTE, pos x, pos y)
 	NF_EnableSpriteRotScale(screen, id, id, false);//(screen, sprite ID, rot ID, 'doublesize') <--- por algun motivo desplaza el sprite un poco abajo a la derecha.
 	}
 
@@ -149,17 +150,18 @@ class Sprite{
     //Cambia el tipo de sprite y paleta del mismo personaje.
     void changeSpriteAndPalette(){
 	NF_DeleteSprite(screen, id);
-	NF_CreateSprite(screen, id, id, id, pos_x, pos_y);//(screen, RAM Slot, VRAM slot SPRITE, VRAM slot PALETTE, pos x, pos y)
+	NF_CreateSprite(screen, id, id, id, screen_pos_x, screen_pos_y);//(screen, RAM Slot, VRAM slot SPRITE, VRAM slot PALETTE, pos x, pos y)
 }
     //Actualiza al sprite (posicion, tipo de sprite y paleta.).
     void updateSprite(){
 	    //Se guarda el estado de la animacion del frame, para compararlo en futuros frames.
 	    past_anim_status = anim_status;
+
 		if(anim_status >= 0 && anim_status <= CHAR_NUM_SPRITES){
 	    //Se actualiza la posicion del sprite.
 		if(anim_status_changed)
 		changeSpriteAndPalette();
-		NF_MoveSprite(screen, id, pos_x, pos_y);//(screen, id, pos x, pos y)
+		NF_MoveSprite(screen, id, screen_pos_x, screen_pos_y);//(screen, id, pos x, pos y)
 		if(flipped)
 		NF_HflipSprite(screen, id, true);
 }
@@ -170,10 +172,15 @@ class Character{
 	//Atributos. (lo mismo, luego los hago privados :D)
 	public:
 	char name[10];
+	int map_pos_x = 0;
+	int map_pos_y = 0;
 	float vel_x = 0;
+	float jump_vel_x = 0;
 	float vel_y = 0;
+	float jump_vel_y = 0;
 	float acc_x = 0;
 	float acc_y = 0;
+	int jump_height = 0;
 	int primary_status = 0; //0.IDLE,1.WALK,2.RUN.
 	int secondary_status = 0; //0.NONE,1.JUMP.
 	int frames_moving = 0;
@@ -188,6 +195,18 @@ class Character{
 	Sprite sprite;
 
 	//Metodos//
+
+	//Genera la posicion en pantalla del personaje.
+	void mapToScreenPos(){
+		//luego hare una version mas aca que permita el scrolleo :D
+		sprite.screen_pos_x = map_pos_x;
+		sprite.screen_pos_y = map_pos_y;
+		
+		if(jumping)
+		sprite.screen_pos_y += jump_height;
+		
+
+	}
 
 	//Maneja el 'double tap' para correr. 
 	//(luego hacerlo para saltar hacia arriba y abajo).
@@ -220,6 +239,9 @@ class Character{
 
 	//Maneja lo relacionado al movimiento del personaje.
 	void moveCharacter(){
+
+	mapToScreenPos();
+	
 	//Se maneja el estado (o animacion) del sprite.
 	if(secondary_status == S_NONE)
 	{
@@ -248,18 +270,18 @@ class Character{
 	{
 		//Quieto (idle).
 		case P_IDLE:
+		vel_x = 0;
+		vel_y = 0;
 		break;
 		//Caminando (walking).
 		case P_WALK:
 		vel_x = 2;
-		if(secondary_status == S_NONE)
 		vel_y = 2;
 		 break;
 		//Corriendo (running).
 		case P_RUN:
 		vel_x = 5;
-		if(secondary_status == S_NONE)
-		vel_y = 5;
+		vel_y = 2;
 		break;
 	}
 
@@ -271,8 +293,7 @@ class Character{
 		{
 		sprite.anim_frame = 0;
 		jumping = true;
-		jump_start_pos = sprite.pos_y;
-		vel_y = -6.7;
+		jump_vel_y = -6.7;
 		}
 		
 		if(jumping)
@@ -281,11 +302,11 @@ class Character{
 		if(frames_jumping >= 1 && jumping)
 		{
 		acc_y = 0.3;
-		vel_y += acc_y;
-		sprite.pos_y += vel_y;
+		jump_vel_y += acc_y;
+		jump_height += jump_vel_y;
 	    }
 
-		if(vel_y <= 0 && vel_y >= -0.5)
+		if(jump_vel_y <= 0 && jump_vel_y >= -0.5)
 		{
 			if(sprite.anim_frame == 1 || sprite.anim_frame == 3)
 			sprite.anim_direction *= -1;
@@ -295,11 +316,12 @@ class Character{
 			sprite.anim_direction = 1;
 		}
 
-	    if(sprite.pos_y >= jump_start_pos)
+		if(jump_height <= 2 && jump_height >= 6 && frames_jumping > 20)
+		sprite.anim_frame = 12;
+
+	    if(jump_height >= 0)
 		{
 		sprite.anim_frame = 12;
-		jump_final_pos = sprite.pos_y;
-		sprite.pos_y -= (jump_final_pos - jump_start_pos);
 		frames_jumping = 0;
 		jumping = false;
 		}
@@ -309,50 +331,56 @@ class Character{
 	
 	//Entradas de teclas del usuario para mover al personaje.
 	if(key_current & KEY_LEFT){
-		sprite.pos_x -= vel_x;
+		map_pos_x -= vel_x;
 		NF_HflipSprite(0, 0, true);
 		NF_HflipSprite(0, sprite.id, true);
 		sprite.flipped = true;
 	}
-	else if(key_current & KEY_RIGHT){
-		sprite.pos_x += vel_x;
+	if(key_current & KEY_RIGHT){
+		map_pos_x += vel_x;
 		NF_HflipSprite(0, 0, false);
 		NF_HflipSprite(0, sprite.id, false);
 		sprite.flipped = false;
 	}
-	else if(key_current & KEY_DOWN){
+
+	if(key_current & KEY_DOWN){
+		if(!(key_held & KEY_LEFT || key_held & KEY_RIGHT))
 		primary_status = P_WALK;
-		sprite.pos_y += vel_y;
+
+		map_pos_y += vel_y;
 	}
-	else if(key_current & KEY_UP){
+	if(key_current & KEY_UP){
+		if(!(key_held & KEY_LEFT || key_held & KEY_RIGHT))
 		primary_status = P_WALK;
-		sprite.pos_y -= vel_y;
-	}
-	else{
-		primary_status = P_IDLE;
+
+		map_pos_y -= vel_y;
 	}
 
-	if(key_pressed & KEY_A || jumping){
+	if(key_current == 0 || (key_held & KEY_LEFT && key_held & KEY_RIGHT) || (key_held & KEY_UP && key_held & KEY_DOWN))
+		primary_status = P_IDLE;
+	
+	if(key_pressed & KEY_A || jumping)
 		secondary_status = S_JUMP;
-	}
 	else
-	{
 		secondary_status = S_NONE;
-	}
+
+	
     
 	//Determina si hubo un cambio en el estado o 'status'.
 	sprite.anim_status_changed = (sprite.past_anim_status != sprite.anim_status);
 
-	//DESCOMENTAR PARA PERMITIR CAMBIAR PANTALLA//
-	/*
-	if (sprite.pos_y >= CHAR_SCREEN_SIZE || sprite.pos_y <= -30)
+	//Mecanica que permite al personaje moverse entre pantallas.
+	if(second_screen_enabled)
+	{
+	if (map_pos_y >= CHAR_SCREEN_SIZE || sprite.screen_pos_y <= -30)
 	 sprite.changeScreen();
-	*/
+	}
+	
 	}
 	//Constructor
 	Character(int initial_pos_x, int initial_pos_y){
-		sprite.pos_x = initial_pos_x;
-		sprite.pos_y = initial_pos_y;
+		map_pos_x = initial_pos_x;
+		map_pos_y = initial_pos_y;
 	}
 };
 
@@ -372,20 +400,22 @@ int main() {
 
 	if(!nfInit){
 		std::cout<<"Hubo un error D:";
+
+		return 1;
 	}
     //Se inicializa el modo de graficos '0' en la pantalla de arriba.
 	NF_Set2D(0, 0);//(screen, mode).
 
-	//DESCOMENTAR PARA PERMITIR CAMBIAR PANTALLA.//
-	//NF_Set2D(1, 0);
-	
+	//Lo mismo en la segunda pantalla.
+    if(second_screen_enabled)
+	{
+	NF_Set2D(1, 0);
+	NF_InitSpriteSys(1);
+	}
 
     //Se prepara todo lo relacionado al sistema de sprites.
 	NF_InitSpriteBuffers();
 	NF_InitSpriteSys(0); //'0' se refiere a la pantalla, en este caso es la superior.
-
-	//DESCOMENTAR PARA PERMITIR CAMBIAR PANTALLA.//
-	//NF_InitSpriteSys(1);
 
 	//Se crea al personaje "kim".
 	Character kim(50, 50);
@@ -428,8 +458,6 @@ int main() {
 
 		//Se registran los inputs del usuario.
 		scanKeys();
-		keysSetRepeat(1,1);
-		key_down_repeat = keysDownRepeat();
 		key_pressed = keysDown();
 		key_held = keysHeld();
 		key_current = keysCurrent();
@@ -465,16 +493,17 @@ int main() {
 		std::cout << "\n\nCAMBIO";
 		
 		std::cout << "\nSTART POS: " << kim.jump_start_pos
-		          << "\nCURRENT POS: " << kim.sprite.pos_y
+		          << "\nCURRENT SCREEN POS: " << kim.sprite.screen_pos_y
+				  << "\nCURRENT MAP POS: " << kim.map_pos_y
 				  << "\nSTATUS PRINCIPAL: " << kim.primary_status
 				  << "\nSTATUS SECUNDARIO: " << kim.secondary_status
 				  << "\nFRAMES SALTANDO: " << kim.frames_jumping;
 		
-		//DESCOMENTAR PARA PERMITIR CAMBIAR PANTALLA.//
-		/*
-		if(keysDown() == KEY_X)
+		if(second_screen_enabled)
+		{
+		if(keysDown() & KEY_X)
 		kim.sprite.changeScreen();
-		*/
+		}
 
 		//Update NF OAM Settings
 		NF_SpriteOamSet(0);
