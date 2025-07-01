@@ -41,6 +41,7 @@ class Sprite{
 	//Atributos.
 	public: //por ahora todos publicos pa testear, --luego hacerlos privados!! y hacer respectivos getters y setters--.
 	bool animated = false;
+	bool is_shadow = false;
 	int anim = 0;
 	int anim_frame = 0;
 	int anim_frame_period[CHAR_NUM_SPRITES];
@@ -50,11 +51,11 @@ class Sprite{
 	int past_anim_status = 0;
 	bool anim_status_changed = false;
 	std::string sprite_name = ""; //CAMBIO HECHO: empece a usar 'strings' de verdad de la std, en vez de 'char[]' como en C.
-	int scale = 0;
+	int scale_x = 256;
+	int scale_y = 256;
 	int scale_f = 0;
 	int rot = 0;
 	int id = 0;
-	int ram_slot = 0;
 	std::string sprite_dir[CHAR_NUM_SPRITES]; //Un espacio para cada sprite del personaje.
 	std::string palette_dir[CHAR_NUM_SPRITES];
 	int screen = 0;
@@ -68,6 +69,16 @@ class Sprite{
 
 	//Asigna los directorios de cada sprite del personaje.
     void assignSpriteDirs(){
+	// ya que se use esta misma clase para varios tipos de sprites (personajes, objetos, etc.)
+	// se podria usar un switch para asignar los directorios de manera unica a cada tipo
+	// en vez del if de abajo.
+	if(is_shadow)
+	{
+	sprite_dir[0] = "sprite/shadow";
+	palette_dir[0] = "palette/shadow";
+	}
+	else
+	{
 	for(int i = 0; i < CHAR_NUM_SPRITES; i++){
 	sprite_dir[i] = "sprite/" + sprite_name;	
 	palette_dir[i] = "palette/" + sprite_name;
@@ -86,6 +97,7 @@ class Sprite{
 		palette_dir[i] += "_jump"; break;
 	}
 	}
+    }
 }
     //Manda los sprites de un personaje a la RAM, y luego a la VRAM.
 	//OJO: posible causante del error 'Data abort.' cuando se ejecuta en hardware real.
@@ -168,12 +180,20 @@ class Sprite{
 		changeSpriteAndPalette();
 
 		NF_MoveSprite(screen, id, screen_pos_x, screen_pos_y);
+		NF_SpriteRotScale(screen, id, rot, scale_x, scale_y);
 
 		if(flipped)
 		NF_HflipSprite(screen, id, true);
 		else
 		NF_HflipSprite(screen, id, false);
 }
+}
+
+void setupSprite(){
+
+	assignSpriteDirs();
+	assignSpritesMemory();
+	createSprite();
 }
 };
 
@@ -211,8 +231,15 @@ class Character{
 	int last_tap_time_y = 0;  
     int double_tap_threshold = 15;
 	Sprite sprite;
+	Sprite shadow;
 
 	//Metodos//
+
+    void setupShadow(){
+		shadow.sprite_name = sprite.sprite_name + "_shadow";
+		shadow.is_shadow = true;
+		shadow.id = sprite.id + 1;
+	}
 
 	//Genera la posicion en pantalla del personaje.
 	void mapToScreenPos(){
@@ -268,6 +295,12 @@ class Character{
 		sprite.anim_frame = 12;
 		frames_jumping = 0;
 		jumping = false;
+		}
+		
+		if(frames_jumping % 10 == 0)
+		{
+		shadow.scale_x = 256 + (2.5f * jump_height);
+		shadow.scale_y = 256 + (2.5f * jump_height);
 		}
 	}
 	
@@ -399,7 +432,7 @@ class Character{
 
 	mapToScreenPos();
 	
-	//Se maneja el estado (o animacion) del sprite.
+	//Se maneja el estado de animacion del sprite.
 	if(secondary_status == S_NONE)
 	{
 	switch(primary_status)
@@ -503,7 +536,6 @@ class Character{
 	{
 		//Salto del personaje.
 		case S_JUMP:
-
 		Jump();
 
 		break;
@@ -594,10 +626,14 @@ class Character{
 	map_pos_y += vel_y;
 	vel_x += acc_x;
 	vel_y += acc_y;
+
+	//Movimiento de la sombra.
+	shadow.screen_pos_x = map_pos_x;
+	shadow.screen_pos_y = map_pos_y + 5;
 	
     
 	//Determina si hubo un cambio en el estado o 'status'.
-	sprite.anim_status_changed = (sprite.past_anim_status != sprite.anim_status) ;
+	sprite.anim_status_changed = (sprite.past_anim_status != sprite.anim_status);
 	primary_status_changed = (past_primary_status != primary_status);
 	secondary_status_changed = (past_secondary_status != secondary_status);
 
@@ -650,6 +686,21 @@ int main() {
 	NF_InitSpriteBuffers();
 	NF_InitSpriteSys(0); //'0' se refiere a la pantalla, en este caso es la superior.
 
+	//Se prepara todo lo relacionado al sistema de tiled backgrounds.
+	NF_InitTiledBgBuffers();
+    NF_InitTiledBgSys(0); //(screen);
+
+	//Se prepara todo lo relacionado al sistema de sonido.
+	NF_InitRawSoundBuffers();
+
+	//Se crea el fondo.
+	NF_LoadTiledBg("bg/bg1", "bg1", 256, 256);
+	NF_CreateTiledBg(0, 3, "bg1");
+
+	//Se carga la musica.
+	NF_LoadRawSound("songs/song1", 0, 11025, 0);
+	NF_PlayRawSound(0, 127, 64, true, 0);
+
 	//Se crea al personaje "kim".
 	Character kim(50, 50);
 	//Se llenan sus atributos.
@@ -658,7 +709,6 @@ int main() {
 	kim.sprite.id = 0;
 	kim.sprite.anim_status = A_IDLE;
 	kim.primary_status = P_IDLE;
-	kim.sprite.ram_slot = 0;
 	kim.sprite.n_frames[A_IDLE] = 3;
 	kim.sprite.n_frames[A_WALK] = 5;
 	kim.sprite.n_frames[A_RUN] = 7;
@@ -670,9 +720,11 @@ int main() {
 	kim.sprite.sprite_name = "kim";
 	kim.sprite.screen = 0;
 	//Se llaman a los metodos que alistan el sprite.
-	kim.sprite.assignSpriteDirs();
-	kim.sprite.assignSpritesMemory();
-	kim.sprite.createSprite();
+	kim.sprite.setupSprite();
+
+	kim.setupShadow();
+	kim.shadow.setupSprite();
+
 	
 
 	
@@ -709,6 +761,7 @@ int main() {
 		}
 		kim.sprite.updateSprite();
 		kim.sprite.animateSprite();
+		kim.shadow.updateSprite();
 		kim.moveCharacter();
 
 
