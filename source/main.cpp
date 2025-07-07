@@ -1,26 +1,14 @@
-//Librerias//
-#include <nds.h>
-#include <stdio.h>
-#include <string.h>
-#include <nf_lib.h>
-#include <string>
-#include <iostream>
-#include <gl2d.h>
-#include <filesystem.h>
+// le libraries.
+#include "libs.h"
 
-//Definiciones de constantes//
+#include "sprite.h"
 
-constexpr uint8_t CHAR_NUM_SPRITES = 4; //CAMBIAR ESTO CADA QUE SE AGREGUE OTRO SPRITE!!!!!
-constexpr uint8_t CHAR_SCREEN_SIZE = 190;
-
-enum CHAR_SPRITE_SIZE {CHAR_DEFAULT_WIDTH = 64, CHAR_DEFAULT_LENGTH = 64};
-enum CHAR_SPRITE_ANIMATION_STATES {A_IDLE = 0, A_WALK = 1, A_RUN = 2, A_JUMP = 3};
-enum CHAR_SPRITE_PRIMARY_STATES {P_IDLE = 0, P_WALK = 1, P_RUN = 2, P_DODGING = 3};
-enum CHAR_SPRITE_SECONDARY_STATES {S_NONE = 0, S_JUMP = 1};
+// le constants.
 
 
 
-//Variables globales.//
+
+// le global variables.
 
 bool nfInit;
 bool second_screen_enabled = false; //Cambiar esto para permitir todo lo de cambiar pantallas.
@@ -32,173 +20,12 @@ int key_up = 0;
 int last_dpad_key = 0;
 int frames = 0;
 
-//Clases//
+// le classes
 
-class Sprite;
 class Character;
 
-class Sprite{
-	//Atributos.
-	public: //por ahora todos publicos pa testear, --luego hacerlos privados!! y hacer respectivos getters y setters--.
-	bool animated = false;
-	bool is_shadow = false;
-	int anim = 0;
-	int anim_frame = 0;
-	int anim_frame_period[CHAR_NUM_SPRITES];
-	int anim_direction = 1;
-	int n_frames[CHAR_NUM_SPRITES];
-    int anim_status = 0;
-	int past_anim_status = 0;
-	bool anim_status_changed = false;
-	std::string sprite_name = ""; //CAMBIO HECHO: empece a usar 'strings' de verdad de la std, en vez de 'char[]' como en C.
-	int scale_x = 256;
-	int scale_y = 256;
-	int scale_f = 0;
-	int rot = 0;
-	int id = 0;
-	std::string sprite_dir[CHAR_NUM_SPRITES]; //Un espacio para cada sprite del personaje.
-	std::string palette_dir[CHAR_NUM_SPRITES];
-	int screen = 0;
-	int screen_pos_x = 0;
-	int screen_pos_y = 0;
-	int size_x = CHAR_DEFAULT_WIDTH;
-	int size_y = CHAR_DEFAULT_LENGTH;
-	bool flipped = false;
-
-	//Metodos//
-
-	//Asigna los directorios de cada sprite del personaje.
-    void assignSpriteDirs(){
-	// ya que se use esta misma clase para varios tipos de sprites (personajes, objetos, etc.)
-	// se podria usar un switch para asignar los directorios de manera unica a cada tipo
-	// en vez del if de abajo.
-	if(is_shadow)
-	{
-	sprite_dir[0] = "sprite/shadow";
-	palette_dir[0] = "palette/shadow";
-	}
-	else
-	{
-	for(int i = 0; i < CHAR_NUM_SPRITES; i++){
-	sprite_dir[i] = "sprite/" + sprite_name;	
-	palette_dir[i] = "palette/" + sprite_name;
-	switch(i){
-		case A_IDLE:
-		sprite_dir[i] += "_idl";
-		palette_dir[i] += "_idl"; break;
-		case A_WALK:
-		sprite_dir[i] += "_walk";
-		palette_dir[i] += "_walk"; break;
-		case A_RUN:
-		sprite_dir[i] += "_run";
-		palette_dir[i] += "_run"; break;
-		case A_JUMP:
-		sprite_dir[i] += "_jump";
-		palette_dir[i] += "_jump"; break;
-	}
-	}
-    }
-}
-    //Manda los sprites de un personaje a la RAM, y luego a la VRAM.
-	//OJO: posible causante del error 'Data abort.' cuando se ejecuta en hardware real.
-	//(puede que haya overflow de memoria(?))
-	//^
-	//|
-	//MENTIROTA ALABERGA. SE CAUSABA POR VARIABLES NO INICIALIZADAS.
-    void assignSpritesMemory(){
-	NF_LoadSpriteGfx(sprite_dir[anim_status].c_str(), id, size_x, size_y);//(file, RAM slot, size x, size y) 
-	NF_LoadSpritePal(palette_dir[anim_status].c_str(), id);//(file, RAM slot)(c_str() para convertir de std::string a char[])
-
-    //Cargar el sprite junto a su paleta de la RAM a la VRAM.
-	NF_VramSpriteGfx(screen, id, id, true);//(screen, RAM slot, VRAM slot, copy all frames to VRAM)
-	                                                                //OJO: si se quiere mostrar un sprite animado, y se ocupa que se cree
-																	//(llamar a NF_CreateSprite()) repetidamente en el bucle, debera ser 'true',
-																	//Si se llama a una vez, de ambas maneras mostrara correctamente la animacion.
-	NF_VramSpritePal(screen, id, id);      //(screen, RAM slot, VRAM slot)
-	}
-
-	//Libera el espacio de memoria utilizado por el sprite de un personaje.
-	void freeSpritesMemory(){
-	NF_FreeSpriteGfx(screen, id);
-	NF_UnloadSpriteGfx(id);
-	NF_UnloadSpritePal(id);
-
-	}
-
-	//Cambia un sprite de pantalla, con la misma posicion relativa con la que se quedo.
-	void changeScreen(){
-	    if (screen_pos_y >= CHAR_SCREEN_SIZE)
-			screen_pos_y = CHAR_SCREEN_SIZE - screen_pos_y;
-		else if (screen_pos_y <= -30)
-		    screen_pos_y = CHAR_SCREEN_SIZE + screen_pos_y;
-			
-			NF_DeleteSprite(screen, id);
-		    freeSpritesMemory();
-		    if (screen == 0) screen = 1;
-		    else screen = 0;
-		    assignSpritesMemory();
-		    NF_CreateSprite(screen, id, id, id, screen_pos_x, screen_pos_y);
-	}
-
-    //Crea un sprite.
-    void createSprite(){
-    //Mostrando el sprite en pantalla.
-	NF_CreateSprite(screen, id, id, id, screen_pos_x, screen_pos_y);//(screen, RAM Slot, VRAM slot SPRITE, VRAM slot PALETTE, pos x, pos y)
-	NF_EnableSpriteRotScale(screen, id, id, false);//(screen, sprite ID, rot ID, 'doublesize') <--- por algun motivo desplaza el sprite un poco abajo a la derecha.
-	}
-
-	//Anima un sprite (si es animado).
-    void animateSprite(){
-		if (animated){
-		//Animacion del sprite.
-		anim += anim_direction;
-		if(anim >= anim_frame_period[anim_status]){
-			anim = 0;
-			anim_frame++;
-			if(anim_frame > n_frames[anim_status]){
-				anim_frame = 0;
-			}
-			NF_SpriteFrame(screen, id, anim_frame); //screen, id, frame.
-		}
-	}
-}
-    //Cambia el tipo de sprite y paleta del mismo personaje.
-    void changeSpriteAndPalette(){
-	NF_DeleteSprite(screen, id);
-	NF_CreateSprite(screen, id, id, id, screen_pos_x, screen_pos_y);//(screen, RAM Slot, VRAM slot SPRITE, VRAM slot PALETTE, pos x, pos y)
-}
-    //Actualiza al sprite (posicion, tipo de sprite y paleta.).
-    void updateSprite(){
-
-	    //Se guarda el estado de la animacion del frame, para compararlo en futuros frames.
-	    past_anim_status = anim_status;
-
-		if(anim_status >= 0 && anim_status <= CHAR_NUM_SPRITES){
-
-	    //Se actualiza la posicion del sprite.
-		if(anim_status_changed)
-		changeSpriteAndPalette();
-
-		NF_MoveSprite(screen, id, screen_pos_x, screen_pos_y);
-		NF_SpriteRotScale(screen, id, rot, scale_x, scale_y);
-
-		if(flipped)
-		NF_HflipSprite(screen, id, true);
-		else
-		NF_HflipSprite(screen, id, false);
-}
-}
-
-void setupSprite(){
-
-	assignSpriteDirs();
-	assignSpritesMemory();
-	createSprite();
-}
-};
-
-class Character{
-	//Atributos. (lo mismo, luego los hago privados :D)
+class Character
+{
 	public:
 	char name[10];
 	int map_pos_x = 0;
@@ -233,25 +60,23 @@ class Character{
 	Sprite sprite;
 	Sprite shadow;
 
-	//Metodos//
+	// le class methods.//
 
     void setupShadow(){
+		shadow.type = SHADOW;
 		shadow.sprite_name = sprite.sprite_name + "_shadow";
-		shadow.is_shadow = true;
 		shadow.id = sprite.id + 1;
 	}
 
-	//Genera la posicion en pantalla del personaje.
+	// calculates the current screen position of the character.
 	void mapToScreenPos(){
 		//luego hare una version mas aca que permita el scrolleo :D
 		sprite.screen_pos_x = map_pos_x;
 		sprite.screen_pos_y = map_pos_y + jump_height;
 	
-		
-
 	}
 
-	//El personaje realiza la accion de saltar.
+	// le jump wooo.
 	void Jump(){
 
 		if(!jumping)
@@ -260,6 +85,7 @@ class Character{
 		vel_x = 0;
 		jumping = true;
 
+		// applies initial velocity.
 		if(!dodging)
 		jump_vel_y = -6.7;
 		else
@@ -274,11 +100,13 @@ class Character{
 
 		if(frames_jumping >= 1 && jumping)
 		{
+		// jump physics.
 		jump_acc_y = 0.3;
 		jump_vel_y += jump_acc_y;
 		jump_height += jump_vel_y;
 	    }
 
+		// controls animation frames (so that the animation happens as in the original game :p).
 		if(jump_vel_y <= 0 && jump_vel_y >= -0.5 && !dodging)
 		{
 			if(sprite.anim_frame == 1 || sprite.anim_frame == 3)
@@ -287,16 +115,19 @@ class Character{
 		else
 			sprite.anim_direction = 1;
 
+		// same as before.
 		if(jump_height <= 2 && jump_height >= 6 && frames_jumping > 20)
 		sprite.anim_frame = 12;
 
 	    if(jump_height >= 0)
 		{
+		// stops jumping.
 		sprite.anim_frame = 12;
 		frames_jumping = 0;
 		jumping = false;
 		}
 		
+		// scales the shadow.
 		if(frames_jumping % 10 == 0)
 		{
 		shadow.scale_x = 256 + (2.5f * jump_height);
@@ -305,33 +136,12 @@ class Character{
 	}
 	
 
-	//Maneja el 'double tap' para correr. 
-	//(luego hacerlo para saltar hacia arriba y abajo).
-	void doubleTap(){
-
-		/*
-		if(key_held & (KEY_LEFT | KEY_RIGHT | KEY_UP | KEY_DOWN))
-		{
-		frames_moving++;
-		}
-
-
-		if(key_up & (KEY_LEFT | KEY_RIGHT | KEY_UP | KEY_DOWN) && frames_moving <= double_tap_threshold)
-		{
-			can_run_or_dodge = can_dtap && (frames_moving - last_tap_time <= double_tap_threshold);
-			can_dtap = true;
-			last_tap_time = frames_moving;
-		}
-
-		if (frames_moving - last_tap_time > double_tap_threshold || jumping) {
-				can_dtap = false;
-		}
-		*/
-
-	
+	// manages 'double tap' mechanic.
+	void doubleTap()
+	{
 		if(key_pressed & (KEY_LEFT | KEY_RIGHT | KEY_UP | KEY_DOWN))
 		{
-		//Horizontal (correr).
+		// horizontal (for running).
 		if(key_pressed & (KEY_LEFT | KEY_RIGHT))
 		{
 		if(frames - last_tap_time_x <= double_tap_threshold && !jumping)
@@ -347,7 +157,7 @@ class Character{
         }
 	    }
 
-		//Vertical (esquivar).
+		// vertical (for dodging.)
 		else if(key_pressed & (KEY_UP | KEY_DOWN))
 		{
 		if(frames - last_tap_time_y <= double_tap_threshold && !jumping)
@@ -367,7 +177,7 @@ class Character{
         if(frames - last_tap_time_x > double_tap_threshold && frames - last_tap_time_y > double_tap_threshold )
         can_dtap = false;
 		
-
+        // manages the different states based on the double tap info.
 		if(can_run && key_held & (KEY_LEFT | KEY_RIGHT) && last_dpad_key != (KEY_UP | KEY_DOWN))
 		primary_status = P_RUN;
 		else if(can_dodge && key_held & (KEY_UP | KEY_DOWN) && last_dpad_key != (KEY_LEFT | KEY_RIGHT))
@@ -391,61 +201,33 @@ class Character{
 		else
 		dodging = false;
 
-
-
-
-
-		/*
-		// Revisa si el jugador está presionando las teclas de movimiento
-		if (keysHeld() & KEY_LEFT || keysHeld() & KEY_RIGHT) {
-			frames_moving++;  // Incrementa los frames de movimiento
-		
-		canRun = canDTap && (frames_moving - lastTapTime <= doubleTapThreshold);
-		// Si se detecta un segundo toque dentro del tiempo límite, activa el correr
-		if (canRun)
-			primary_status = P_RUN;
-		}
-		// Si se ha soltado la tecla, intentamos registrar el primer toque
-		 if (keysUp() == KEY_LEFT || keysUp() == KEY_RIGHT) {
-			if (frames_moving <= doubleTapThreshold) {
-				canDTap = true; // Primer toque registrado
-				lastTapTime = frames_moving; // Guarda el tiempo del primer toque
-			}
-			// Resetea la variable canDTap después de un cierto tiempo si no se detecta el segundo toque
-			if (frames_moving - lastTapTime > doubleTapThreshold) {
-				canDTap = false;
-				frames_moving = 0; // Reinicia el contador de frames después de un tiempo de espera
-			}
-		}
-		//Si no puede harcer 'double tap' o esta yendo hacia arriba o abajo, camina.
-		if(!canDTap && ((keysHeld() == KEY_UP) || (keysHeld() == KEY_DOWN) || (keysHeld() == KEY_LEFT) ||(keysHeld() == KEY_RIGHT)))
-			primary_status = P_WALK;
-		*/
 	}
 
-	//Maneja lo relacionado al movimiento del personaje.
-	void moveCharacter(){
+	// character movement.
+	void moveCharacter()
+	{
 	
-	//Se guardan los estados del personaje para compararlo en futuros frames.
+	// primary and secondary states are cached for comparison in future frames.
+	sprite.past_anim_status = sprite.anim_status;
 	past_primary_status = primary_status;
 	past_secondary_status = secondary_status;
 
 	mapToScreenPos();
 	
-	//Se maneja el estado de animacion del sprite.
+	// manages animation states.
 	if(secondary_status == S_NONE)
 	{
-	switch(primary_status)
-	{
-		case P_IDLE:
-		sprite.anim_status = A_IDLE; break;
-		case P_WALK:
-		sprite.anim_status = A_WALK; break;
-		case P_RUN:
-		sprite.anim_status = A_RUN; break;
-		case P_DODGING:
-		sprite.anim_status = A_JUMP; break;
-	}
+	    switch(primary_status)
+	    {
+		    case P_IDLE:
+		    sprite.anim_status = A_IDLE; break;
+		    case P_WALK:
+		    sprite.anim_status = A_WALK; break;
+		    case P_RUN:
+		    sprite.anim_status = A_RUN; break;
+		    case P_DODGING:
+		    sprite.anim_status = A_JUMP; break;
+	    }
     }
 	else
 	{
@@ -456,18 +238,18 @@ class Character{
 		}
 	}
 
-    //Maneja todo lo relacionado al doble tap para correr.
+    
 	doubleTap();
 
-	//Se maneja la velocidad del personaje segun sus estados primarios.
+	// manages character velocity bases on its status.
 	switch (primary_status)
 	{
-		//Quieto (idle).
 		case P_IDLE:
+
 		vel_y = 0; //ya que en el juego original no hay slow down en el eje y :D
 		can_move = false;
 		break;
-		//Caminando (walking).
+
 		case P_WALK:
 		can_move = true;
 		if(!jumping)
@@ -492,9 +274,10 @@ class Character{
 		vel_y = -2;
 		else 
 		vel_y = 0; //ya que en el juego original no hay slow down en el eje y :D
-		 break;
-		//Corriendo (running).
+		break;
+
 		case P_RUN:
+
 		can_move = true;
 		if(!jumping)
 		{
@@ -517,63 +300,61 @@ class Character{
 		vel_y = -2;
 		else
 		vel_y = 0; //ya que en el juego original no hay slow down en el eje y :D
-
 		break;
-		//Esquivando.
+
 		case P_DODGING:
+
 		if(vel_y == 0)
 		{
 		if(last_dpad_key & KEY_UP)
-		vel_y = -1.5;
+		vel_y = -2;
 		else if (last_dpad_key & KEY_DOWN)
-		vel_y = 1.5;
+		vel_y = 2;
 		}
 		break;
 	}
 
-	//Se maneja la logica de los estados secundarios.
+	// secondary status logic.
 	switch (secondary_status)
 	{
-		//Salto del personaje.
 		case S_JUMP:
 		Jump();
-
 		break;
 	}
 
 	
-	//Entradas de teclas del usuario para mover al personaje.
-	//Izquierda.
+	// key inputs for movement.
+	// left.
 	if(key_held & KEY_LEFT && !(key_held & KEY_RIGHT)){
 		sprite.flipped = true;
 	}
-	//Derecha.
+	// right.
 	if(key_held & KEY_RIGHT && !(key_held & KEY_LEFT)){
 		sprite.flipped = false;
 	}
 
 	if(!dodging)
 	{
-	//Abajo.
+	// down.
 	if(key_held & KEY_DOWN && !(key_held & KEY_UP)){
 		if(!(key_held & KEY_LEFT || key_held & KEY_RIGHT))
 		primary_status = P_WALK;
 	}
-	//Arriba.
+	// up.
 	if(key_held & KEY_UP && !(key_held & KEY_DOWN)){
 		if(!(key_held & KEY_LEFT || key_held & KEY_RIGHT))
 		primary_status = P_WALK;
 	}
     }
     
-	//Quieto.
+	// idle.
 	if(((key_current == 0 || (key_held & KEY_LEFT && key_held & KEY_RIGHT) || (key_held & KEY_UP && key_held & KEY_DOWN))) && !jumping)
 	    {
 		primary_status = P_IDLE;
 	    can_move = false;
 	    }
 
-    //Salto.
+    // jump.
 	if(key_pressed & KEY_A || jumping)
 		secondary_status = S_JUMP;
 	else
@@ -581,9 +362,9 @@ class Character{
 
 
 
-	//Desaceleracion cuando el personaje deja de moverse.
+	// slowdown when character stops moving.
 
-	//Horizontal.
+	// horizontal.
 	if(((!(key_held & (KEY_LEFT | KEY_RIGHT))) || (key_held & KEY_LEFT && key_held & KEY_RIGHT)) && !jumping)
 	{
 
@@ -621,23 +402,25 @@ class Character{
 	}
 	
 
-    //Movimiento del personaje.
+    // character movement.
 	map_pos_x += vel_x;
 	map_pos_y += vel_y;
 	vel_x += acc_x;
 	vel_y += acc_y;
 
-	//Movimiento de la sombra.
+	// shadow movement.
+	//igual actualizar esto cuando la posicion en el mapa no tenga nada que ver con la posicion en pantalla
+	//(por el scrolleo :P)
 	shadow.screen_pos_x = map_pos_x;
 	shadow.screen_pos_y = map_pos_y + 5;
 	
     
-	//Determina si hubo un cambio en el estado o 'status'.
+	// did the states change?
 	sprite.anim_status_changed = (sprite.past_anim_status != sprite.anim_status);
 	primary_status_changed = (past_primary_status != primary_status);
 	secondary_status_changed = (past_secondary_status != secondary_status);
 
-	//Mecanica que permite al personaje moverse entre pantallas.
+	// mechanic to let the character move betweens screens.
 	if(second_screen_enabled)
 	{
 	if (map_pos_y >= CHAR_SCREEN_SIZE || sprite.screen_pos_y <= -30)
@@ -646,7 +429,7 @@ class Character{
 	}
 
 
-	//Constructor
+	//Constructor.
 	Character(int initial_pos_x, int initial_pos_y){
 		map_pos_x = initial_pos_x;
 		map_pos_y = initial_pos_y;
@@ -656,7 +439,8 @@ class Character{
 //Prototipos de funciones.//
 
 //Funcion principal.
-int main() {
+int main() 
+{
 
 	defaultExceptionHandler();
     //Se inicia el 'modo demo' para poder mostrar texto en la segunda pantalla.
@@ -678,8 +462,8 @@ int main() {
 	//Lo mismo en la segunda pantalla.
     if(second_screen_enabled)
 	{
-	NF_Set2D(1, 0);
-	NF_InitSpriteSys(1);
+	    NF_Set2D(1, 0);
+	    NF_InitSpriteSys(1);
 	}
 
     //Se prepara todo lo relacionado al sistema de sprites.
@@ -702,10 +486,11 @@ int main() {
 	NF_PlayRawSound(0, 127, 64, true, 0);
 
 	//Se crea al personaje "kim".
-	Character kim(50, 50);
+	Character kim(90, 76);
 	//Se llenan sus atributos.
 	//(luego creare un constructor que incluya toda la wea de abajo).
 	kim.sprite.animated = true;
+	kim.sprite.type = CHARACTER;
 	kim.sprite.id = 0;
 	kim.sprite.anim_status = A_IDLE;
 	kim.primary_status = P_IDLE;
@@ -721,7 +506,6 @@ int main() {
 	kim.sprite.screen = 0;
 	//Se llaman a los metodos que alistan el sprite.
 	kim.sprite.setupSprite();
-
 	kim.setupShadow();
 	kim.shadow.setupSprite();
 
@@ -754,15 +538,9 @@ int main() {
 		key_up = keysUp();
 
 		//Metodos para actualizar el sprite cada frame.
-		if(kim.sprite.anim_status_changed){
-		kim.sprite.updateSprite();
-		kim.sprite.freeSpritesMemory();
-		kim.sprite.assignSpritesMemory();
-		}
-		kim.sprite.updateSprite();
-		kim.sprite.animateSprite();
-		kim.shadow.updateSprite();
 		kim.moveCharacter();
+		kim.sprite.updateSprite();
+		kim.shadow.updateSprite();
 
 
 		//CONSOLE DEBUG//
