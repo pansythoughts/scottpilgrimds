@@ -29,8 +29,13 @@ class Background
     int chunk = 0;
     bool layers_swapped = false;
     bool new_chunk = false;
+    bool new_left_chunk = false;
+    bool new_right_chunk = false;
     bool new_left_chunk_loaded = false;
     bool new_right_chunk_loaded = false;
+
+    std::map<int, std::string> loaded_chunks;
+    std::list<int> chunk_order;
 
     void setupBackground();
     void createBackground();
@@ -39,6 +44,7 @@ class Background
     void updateScroll(int char_map_pos_x, int char_map_pos_y);
     void updateBackground(int char_map_pos_x, int char_map_pos_y);
     void deleteBGRightHalf(int layer);
+    void loadChunk(int chunk_id);
 
     Background(int bg_id);
 };

@@ -463,6 +463,10 @@ void Character::moveCharacter(int bg_scroll_x, int bg_scroll_y)
 	vel_x += acc_x;
 	vel_y += acc_y;
 
+	// adjustment, so the character doesn't stay in the middle of two chunks.
+	if(bg_scroll_x % 256 == 0 && bg_scroll_x > 0)
+	map_pos_x++;
+
 	// update screen position.
 	mapToScreenPos(bg_scroll_x, bg_scroll_y);
 
