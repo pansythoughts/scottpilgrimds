@@ -128,8 +128,9 @@ int main()
 				  << "\nMAP_SCROLL Y: " << level_bg.map_scroll_y
 				  << "\nCHUNK_SCROLL X: " << level_bg.chunk_scroll_x
 				  << "\nCHUNK_SCROLL Y: " << level_bg.chunk_scroll_y
-				  << "\nMAX BLOCKS TILES: " << NF_MAX_BANKS_TILES
 				  << "\nVRAM: " << NF_TEXVRAM.free
+				  << "\nRIGHTCHUNKLOADED: " << level_bg.new_right_chunk_loaded
+				  << "\nLEFTCHUNKLOADED: " << level_bg.new_left_chunk_loaded
 				  << "\nFRAMES: " << frames;
 		
 		if(second_screen_enabled)

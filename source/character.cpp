@@ -120,7 +120,7 @@ void Character::doubleTap()
 	// horizontal (for running).
 	if(key_pressed & (KEY_LEFT | KEY_RIGHT))
 	{
-	if(frames - last_tap_time_x <= double_tap_threshold && !jumping)
+	if(frames - last_tap_time_x <= double_tap_threshold && !jumping && frames > double_tap_threshold)
 	{
         can_run = true;
         can_dtap = false;
@@ -136,7 +136,7 @@ void Character::doubleTap()
 	// vertical (for dodging.)
 	else if(key_pressed & (KEY_UP | KEY_DOWN))
 	{
-	if(frames - last_tap_time_y <= double_tap_threshold && !jumping)
+	if(frames - last_tap_time_y <= double_tap_threshold && !jumping && frames > double_tap_threshold)
 	{
         can_dodge = true;
         can_dtap = false;
@@ -397,7 +397,7 @@ void Character::moveCharacter(int bg_scroll_x, int bg_scroll_y)
 	    }
 
     // jump.
-	if(key_pressed & KEY_A || jumping)
+	if(key_pressed & KEY_B || jumping)
 		secondary_status = S_JUMP;
 	else
 		secondary_status = S_NONE;
@@ -462,6 +462,10 @@ void Character::moveCharacter(int bg_scroll_x, int bg_scroll_y)
 	map_pos_y += vel_y;
 	vel_x += acc_x;
 	vel_y += acc_y;
+
+	// adjustment, so the character doesn't stay in the middle of two chunks.
+	if(bg_scroll_x % 256 == 0 && bg_scroll_x > 0)
+	map_pos_x++;
 
 	// update screen position.
 	mapToScreenPos(bg_scroll_x, bg_scroll_y);

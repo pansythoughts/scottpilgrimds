@@ -67,12 +67,15 @@
 	// frees memory used by the sprite and palette.
 	void Sprite::freeSpritesMemory()
 	{
-	NF_UnloadSpriteGfx(slot_id);
-	NF_UnloadSpritePal(slot_id);
-	NF_FreeSpriteGfx(screen, slot_id);
+	    // free from RAM.
+	    NF_UnloadSpriteGfx(slot_id);
+	    NF_UnloadSpritePal(slot_id);
+		
+		//free from VRAM.
+	    NF_FreeSpriteGfx(screen, slot_id);
 	}
 
-	// changes sprite from a screen to another, mantaining its relative position.
+	// changes sprite from a screen to another, mantaining its relative position. (shitty mechanic.)
 	void Sprite::changeScreen()
 	{
 	    if (screen_pos_y >= CHAR_SCREEN_SIZE)
@@ -126,8 +129,8 @@
     //updates the sprite and palette to the one according to the current animation state.
     void Sprite::updateSpriteAndPalette()
 	{
-	NF_DeleteSprite(screen, slot_id);
-	NF_CreateSprite(screen, slot_id, slot_id, slot_id, screen_pos_x, screen_pos_y);//(screen, RAM Slot, VRAM slot SPRITE, VRAM slot PALETTE, pos x, pos y)
+	    NF_DeleteSprite(screen, slot_id);
+	    NF_CreateSprite(screen, slot_id, slot_id, slot_id, screen_pos_x, screen_pos_y);//(screen, RAM Slot, VRAM slot SPRITE, VRAM slot PALETTE, pos x, pos y)
     }
 
     // updates the whole sprite (position, animation, sprite, palette, etc.)

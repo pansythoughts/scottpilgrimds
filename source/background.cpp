@@ -15,8 +15,8 @@ void Background::setupBackground()
         size_x = 512;
         size_y = 256;
         scrolled = true;
-        layers[LEFT] = 1;
-        layers[RIGHT] = 0;
+        layers[0] = 0;
+        layers[1] = 1;
         screen = 0;
         for(int i = 0; i < n_of_files; i++)
         {
@@ -45,22 +45,21 @@ void Background::createBackground()
     NF_LoadTiledBg(bg_dirs[chunk + 1].c_str(), bg_dirs[chunk + 1].c_str(), size_x, size_y);
     NF_CreateTiledBg(screen, layers[RIGHT], bg_dirs[chunk + 1].c_str());
 
+    // unload them from RAM.
+    NF_UnloadTiledBg(bg_dirs[chunk].c_str());
+    NF_UnloadTiledBg(bg_dirs[chunk + 1].c_str());
+
     // wipes the right half of both backgrounds. avoids glitchy graphics on the empty half.
-    deleteBGRightHalf(layers[LEFT]);
-    deleteBGRightHalf(layers[RIGHT]);
+    deleteBGRightHalf(layers[0]);
+    deleteBGRightHalf(layers[1]);
 
 }
 
 void Background::deleteBackground()
 {
-
     // deletes both layers of background.
-    NF_DeleteTiledBg(screen, layers[LEFT]);
-    NF_UnloadTiledBg(bg_dirs[chunk].c_str());
-
-    NF_DeleteTiledBg(screen, layers[RIGHT]);
-    NF_UnloadTiledBg(bg_dirs[chunk + 1].c_str());
-
+    NF_DeleteTiledBg(screen, layers[0]);
+    NF_DeleteTiledBg(screen, layers[1]);
 }
 
 // scroll system.
@@ -68,6 +67,8 @@ void Background::updateScroll(int char_map_pos_x, int char_map_pos_y)
 {
     if(scrolled)
     {
+        int left_layer, right_layer;
+
         // caches scroll value in x to compare in future frames.
         prev_scroll_x = chunk_scroll_x;
 
@@ -82,14 +83,23 @@ void Background::updateScroll(int char_map_pos_x, int char_map_pos_y)
         if(char_map_pos_x >= 100)
         {
             map_scroll_x = char_map_pos_x - 100;
-
-            chunk_scroll_x = map_scroll_x - ((chunk) * SCREEN_WIDTH);
+            chunk_scroll_x = map_scroll_x - (chunk * SCREEN_WIDTH);
         }
 
 
         // scroll the background.
-        scrollNoLoop(screen, layers[LEFT], chunk_scroll_x, chunk_scroll_y);
-        scrollNoLoop(screen, layers[RIGHT], -SCREEN_WIDTH + chunk_scroll_x, chunk_scroll_y);
+        if(!layers_swapped)
+        {
+            left_layer = layers[0];
+            right_layer = layers[1];
+        }
+        else
+        {
+            left_layer = layers[1];
+            right_layer = layers[0];
+        }
+        scrollNoLoop(screen, left_layer, chunk_scroll_x, chunk_scroll_y);
+        scrollNoLoop(screen, right_layer, -SCREEN_WIDTH + chunk_scroll_x, chunk_scroll_y);
 
     }
 }
@@ -151,31 +161,89 @@ void Background::scrollNoLoop(int screen, int layer, int scroll_x, int scroll_y)
 void Background::updateBackground(int char_map_pos_x, int char_map_pos_y)
 {
     
-    // updates le scroll.
-    updateScroll(char_map_pos_x, char_map_pos_y);
+    // helper variables.
+    bool load_right_chunk = prev_scroll_x < SCREEN_WIDTH && chunk_scroll_x >= SCREEN_WIDTH;
+    bool load_left_chunk = prev_scroll_x > 0 && chunk_scroll_x <= 0;
+
+     // next chunk.
+    if(load_right_chunk)
+    {
+        chunk++;
+        new_right_chunk = true;
+    }
+    else if(load_left_chunk && chunk > 0)
+    {
+        chunk--;
+        new_left_chunk = true;
+    }
+
+    // load first 'batch' of 16 chunks to RAM.
+    if(chunk < 15 && !chunks_loaded[LEFT])
+    {
+        for(int i = 0; i < 17; i++)
+        {
+            if(chunks_loaded[RIGHT])
+            NF_UnloadTiledBg(bg_dirs[i + 15].c_str());
+            NF_LoadTiledBg(bg_dirs[i].c_str(), bg_dirs[i].c_str(), size_x, size_y);
+        }
+        chunks_loaded[LEFT] = true;
+        chunks_loaded[RIGHT] = false;
+    }
+    // load second 'batch' of the remaining chunks.
+    else if(chunk >= 15 && !chunks_loaded[RIGHT])
+    {
+        for(int i = 0; i < 17; i++)
+        {
+            if(chunks_loaded[LEFT])
+            NF_UnloadTiledBg(bg_dirs[i].c_str());
+            NF_LoadTiledBg(bg_dirs[i + 15].c_str(), bg_dirs[i + 15].c_str(), size_x, size_y);
+        }
+        chunks_loaded[LEFT] = false;
+        chunks_loaded[RIGHT] = true;
+    }
+
 
     // if a new chunk must be loaded...
-    if(((prev_scroll_x < SCREEN_WIDTH && chunk_scroll_x >= SCREEN_WIDTH) || (prev_scroll_x > 0 && chunk_scroll_x <= 0)) && map_scroll_x > 0)
+    if(((load_right_chunk) || (load_left_chunk)) && map_scroll_x > 0)
     {
-
-        // deletes all bgs.
-        deleteBackground();
-      
-        // next chunk.
-        if(prev_scroll_x < SCREEN_WIDTH && chunk_scroll_x >= SCREEN_WIDTH)
-        chunk++;
-        else
-        chunk--;
+        // helper variable.
+        int layer_to_delete;
 
         new_chunk = true;
+
+        // if layer 0 = left, and layer 1 = right...
+        if(!layers_swapped)
+        {
+            layer_to_delete = (load_right_chunk)? layers[0] : layers[1];
+        }
+        else
+        {
+            layer_to_delete = (load_left_chunk)? layers[0] : layers[1];
+        }
+
+        // delete and create the needed chunk in the correspondant layer.
+        NF_DeleteTiledBg(screen, layer_to_delete);
+        NF_CreateTiledBg(screen, layer_to_delete,
+                        (load_right_chunk)? 
+                        bg_dirs[chunk + 1].c_str() :  bg_dirs[chunk].c_str());
+
+        // swap the layers order after each chunk is loaded.
+        layers_swapped = !layers_swapped;
         
-        // load the former right chunk to the left layer, as the new left chunk.
-        createBackground();
+        // clean the right half of each chunk.
+        deleteBGRightHalf(layers[0]);
+        deleteBGRightHalf(layers[1]);
     }
     else
+    {
         // no new chunk :c
+        new_left_chunk = false;
+        new_right_chunk = false;
         new_chunk = false;
+    }
 
+    // updates le scroll.
+    updateScroll(char_map_pos_x, char_map_pos_y);
 }
 
 // deletes the map corresponding to the right half of a 512 x 256 background.
