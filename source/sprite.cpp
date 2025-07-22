@@ -44,35 +44,78 @@
 		sprite_dir[0] = "sprite/run_effect";
 		palette_dir[0] = "palette/run_effect";
 		break;
+
+		case SPR_LAND_EFFECT:
+		sprite_dir[0] = "sprite/land_effect";
+		palette_dir[0] = "palette/land_effect";
+		break;
 	}
 }
     
-    // loads sprites to RAM, then VRAM. 
-	//OJO: posible causante del error 'Data abort.' cuando se ejecuta en hardware real.
-	//(puede que haya overflow de memoria(?))
-	//^
-	//|
-	//MENTIROTA ALABERGA. SE CAUSABA POR VARIABLES NO INICIALIZADAS.
-    void Sprite::assignSpritesMemory()
+    // loads all sprites to RAM.
+    void Sprite::assignSpritesRAM()
 	{
-	// loads a sprite and its palette to RAM (id = ram_slot).
-	NF_LoadSpriteGfx(sprite_dir[anim_status].c_str(), slot_id, size_x, size_y);//(file, RAM slot, size x, size y) 
-	NF_LoadSpritePal(palette_dir[anim_status].c_str(), slot_id);//(file, RAM slot)(c_str() para convertir de std::string a char[])
+		for(int j = 0; j < num_sprites; j++)
+		{
+			// searches for a free RAM slot, and loads the sprite data to it.
+		    for(int i = 0; i < NF_SLOTS_SPR256GFX; i++)
+		        if(NF_SPR256GFX[i].available)
+				{
+	                NF_LoadSpriteGfx(sprite_dir[j].c_str(), i, size_x, size_y);
+					gfx_id[j] = i;
+				    break;
+				}
 
-    // loads the sprite and palette to VRAM.
-	NF_VramSpriteGfx(screen, slot_id, slot_id, true);//(screen, RAM slot, VRAM slot, copy all frames to VRAM)                                                          
-	NF_VramSpritePal(screen, slot_id, slot_id);      //(screen, RAM slot, VRAM slot)
+		    // searches for a free RAM slot, and loads the palette data to it.
+		    for(int i = 0; i < NF_SLOTS_SPR256PAL; i++)
+		        if(NF_SPR256PAL[i].available)
+				{
+	                NF_LoadSpritePal(palette_dir[j].c_str(), i);
+					pal_id[j] = i;
+				 	break;
+				}
+		}
+	}
+
+	// loads the sprite and palette to VRAM.
+    void Sprite::assignSpritesVRAM()
+	{
+		// looks for a free sprite slot in VRAM.
+		for(int i = 0; i < 128; i++)
+		if(!NF_SPR256VRAM[screen][i].inuse)
+		{
+	    NF_VramSpriteGfx(screen, gfx_id[anim_status], i, true);
+		gfx_vram_id[anim_status] = i;
+		break;
+		}    
+		// looks for a free palette slot in VRAM.   
+		for(int i = 0; i < 16; i++)
+		if(!NF_SPRPALSLOT[screen][i].inuse)
+		{                                                  
+	    NF_VramSpritePal(screen, pal_id[anim_status], i); 
+		pal_vram_id[anim_status] = i;
+		break;
+		}
 	}
 
 	// frees memory used by the sprite and palette.
-	void Sprite::freeSpritesMemory()
+	void Sprite::freeSpritesRAM()
 	{
 	    // free from RAM.
-	    NF_UnloadSpriteGfx(slot_id);
-	    NF_UnloadSpritePal(slot_id);
+		for(int i = 0; i < num_sprites; i++)
+		{
+	    NF_UnloadSpriteGfx(gfx_id[i]);
+	    NF_UnloadSpritePal(pal_id[i]);
+		}
 		
+	}
+
+	void Sprite::freeSpritesVRAM()
+	{
 		//free from VRAM.
-	    NF_FreeSpriteGfx(screen, slot_id);
+	    NF_FreeSpriteGfx(screen, gfx_vram_id[anim_status]);
+		NF_SPR256VRAM[screen][gfx_vram_id[anim_status]].inuse = false;
+		NF_SPRPALSLOT[screen][pal_vram_id[anim_status]].inuse = false;
 	}
 
 	// changes sprite from a screen to another, mantaining its relative position. (shitty mechanic.)
@@ -84,27 +127,61 @@
 		    screen_pos_y = CHAR_SCREEN_SIZE + screen_pos_y;
 			
 			NF_DeleteSprite(screen, slot_id);
-		    freeSpritesMemory();
+		    freeSpritesVRAM();
 		    if (screen == 0) screen = 1;
 		    else screen = 0;
-		    assignSpritesMemory();
-		    NF_CreateSprite(screen, slot_id, slot_id, slot_id, screen_pos_x, screen_pos_y);
+		    assignSpritesVRAM();
+		    createSprite();
 	}
 
-    // creates/shows a sprite in screen.
+    // creates/shows a SINGLE sprite in screen.
     void Sprite::createSprite()
 	{
-	    // creates le sprite
-	    NF_CreateSprite(screen, slot_id, slot_id, slot_id, screen_pos_x, screen_pos_y);//(screen, RAM Slot, VRAM slot SPRITE, VRAM slot PALETTE, pos x, pos y)
-	    NF_EnableSpriteRotScale(screen, slot_id, slot_id, false);//(screen, sprite ID, rot ID, 'doublesize') <--- por algun motivo desplaza el sprite un poco abajo a la derecha.
+		// searches for a free OAM slot, and load the sprite to it.
+		for(int i = 0; i < 128; i++)
+		{
+			if(!NF_SPRITEOAM[screen][i].created)
+			{
+				NF_CreateSprite(screen, i, gfx_vram_id[anim_status], pal_vram_id[anim_status], screen_pos_x, screen_pos_y);
+				if(rotscale)
+				NF_EnableSpriteRotScale(screen, i, i, false);
+				sprite_id[anim_status] = i;
+				break;
+			}
+
+		}
 		created = true;
 	}
 
 	void Sprite::deleteSprite()
 	{
 		// deletes le sprite.
-		NF_DeleteSprite(screen, slot_id);
+		NF_DeleteSprite(screen, sprite_id[anim_status]);
 		created = false;
+	}
+
+	// creates a mirrored sprite. (like the landing effect, for example).
+	void Sprite::createMirroredSprite()
+	{
+		if(mirrored)
+		{
+			// creates first half.
+		    createSprite();
+		    flipped = true;
+			
+			// creates the other half in another sprite slot (probably the next but not guaranteed lol)
+		    for(int i = 0; i < 128; i++)
+		    {
+			    if(!NF_SPRITEOAM[screen][i].created)
+			    {
+				NF_CreateSprite(screen, i, gfx_vram_id[anim_status], pal_vram_id[anim_status], screen_pos_x + 32, screen_pos_y);
+				NF_HflipSprite(screen, i, false);
+				break;
+			    }
+
+		    }
+	    }
+
 	}
 
 	// animates a sprite (if it's animated).
@@ -120,17 +197,22 @@
 			{
 				anim_frame = 0;
 				if(!looped)
-				deleteSprite();
+				{
+				    deleteSprite();
+				    if(mirrored)
+				    NF_DeleteSprite(screen, sprite_id[anim_status] + 1); // risky, but maybe always works?
+				}
 			}
-			NF_SpriteFrame(screen, slot_id, anim_frame); //screen, id, frame.
+			NF_SpriteFrame(screen, sprite_id[anim_status], anim_frame); //screen, id, frame.
 		}
 	}
 }
     //updates the sprite and palette to the one according to the current animation state.
     void Sprite::updateSpriteAndPalette()
 	{
-	    NF_DeleteSprite(screen, slot_id);
-	    NF_CreateSprite(screen, slot_id, slot_id, slot_id, screen_pos_x, screen_pos_y);//(screen, RAM Slot, VRAM slot SPRITE, VRAM slot PALETTE, pos x, pos y)
+		// lol.
+	    deleteSprite();
+	    createSprite();
     }
 
     // updates the whole sprite (position, animation, sprite, palette, etc.)
@@ -142,26 +224,39 @@
 	    // updates the sprite and palette when needed.
 		if(anim_status_changed)
 		{
-		freeSpritesMemory();
-		assignSpritesMemory();
+		freeSpritesVRAM();
+		assignSpritesVRAM();
 		updateSpriteAndPalette();
 		}
 
 		// moves and rotates the sprite.
 		if(can_move)
-		NF_MoveSprite(screen, slot_id, screen_pos_x, screen_pos_y);
+		NF_MoveSprite(screen, sprite_id[anim_status], screen_pos_x, screen_pos_y);
 
-		NF_SpriteRotScale(screen, slot_id, rot, scale_x, scale_y);
+		if(rotscale)
+		NF_SpriteRotScale(screen, sprite_id[anim_status], rot, scale_x, scale_y);
 
-		// sprite flip.
-		if(flipped)
-		NF_HflipSprite(screen, slot_id, true);
-		else
-		NF_HflipSprite(screen, slot_id, false);
+        // sprite flip.
+		NF_HflipSprite(screen, sprite_id[anim_status], flipped);
+
 
 		animateSprite();
         }
     }
+
+	void Sprite::freePalVRAM()//SHHHITTYYY DONT USE
+	{
+		u32 address = 0x06890000 + (pal_vram_id[anim_status] * 256 * 2);
+        memset((void *)address, 0, NF_SPR256PAL[pal_id[anim_status]].size);
+		NF_SPRPALSLOT[screen][pal_vram_id[anim_status]].inuse = false;
+
+		NF_SPRVRAM[screen].free += NF_SPR256PAL[pal_id[anim_status]].size;
+		NF_SPRVRAM[screen].pos[NF_SPRVRAM[screen].deleted] = address;
+		NF_SPRVRAM[screen].size[NF_SPRVRAM[screen].deleted] = NF_SPR256PAL[pal_id[anim_status]].size;
+		NF_SPRVRAM[screen].deleted++;
+		NF_SPRVRAM[screen].fragmented += NF_SPR256PAL[pal_id[anim_status]].size;
+	}
+
     // sets up sprite.
     void Sprite::setupSprite()
     {
@@ -171,12 +266,40 @@
 			size_x = 32;
 			size_y = 32;
 			animated = true;
+			num_sprites = 1;
 			looped = false;
 			n_frames[0] = 4;
 			anim_frame_period[0] = 5;
 			can_move = true;
+			rotscale = false;
+			break;
+
+			case SPR_LAND_EFFECT:
+			size_x = 32;
+			size_y = 32;
+			animated = true;
+			num_sprites = 1;
+			looped = false;
+			n_frames[0] = 4;
+			anim_frame_period[0] = 5;
+			can_move = false;
+			mirrored = true;
+			rotscale = false;
+			break; 
+
+			case SPR_SHADOW:
+			size_x = 64;
+			size_y = 64;
+			animated = false;
+			num_sprites = 1;
+			looped = false;
+			n_frames[0] = 0;
+			anim_frame_period[0] = 0;
+			can_move = true;
+			rotscale = true;
 			break;
 		}
 	    assignSpriteDirs();
-	    assignSpritesMemory();
+	    assignSpritesRAM();
+		assignSpritesVRAM();
     }

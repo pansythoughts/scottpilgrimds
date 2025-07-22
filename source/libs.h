@@ -8,6 +8,4 @@
 #include <iostream>
 #include <gl2d.h>
 #include <filesystem.h>
-
-#include <map>
-#include <list>
+#include <malloc.h>

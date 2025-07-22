@@ -12,6 +12,10 @@
 bool nfInit;
 int frames = 0;
 
+volatile u8* ram = (volatile u8*)0x02000000;
+long bytes = 0;
+bool debug = false; // change this to allow for debug.
+
 //Prototipos de funciones.//
 
 //Funcion principal.
@@ -76,6 +80,7 @@ int main()
 	kim.shadow.createSprite();
 
 
+	struct mallinfo info = mallinfo();
 
 	
 	//texto pitero :P
@@ -96,12 +101,24 @@ int main()
 		scanInput();
 
 		//Metodos para actualizar el sprite cada frame.
-		kim.moveCharacter(level_bg.map_scroll_x, level_bg.map_scroll_y);
-		kim.sprite.updateSprite();
-		kim.shadow.updateSprite();
-		kim.effects[EFF_RUN_EFFECT].updateSprite();
+		kim.updateCharacter(level_bg.map_scroll_x, level_bg.map_scroll_y);
 
 		level_bg.updateBackground(kim.map_pos_x, kim.map_pos_y);
+
+		info = mallinfo();
+
+		if(debug)
+		{
+
+
+		for (int i = 0; i < (0x023FFFFF - 0x02000000); i++)
+        {
+        if (ram[i] != 0)
+            bytes++;
+		}
+	    
+
+
 
 
 		//CONSOLE DEBUG//
@@ -115,24 +132,27 @@ int main()
 				  << "\nCURRENT MAP POS X: " << kim.map_pos_x
 				  << "\nSTATUS PRINCIPAL: " << kim.primary_status
 				  << "\nSTATUS SECUNDARIO: " << kim.secondary_status
+				  << "\nANIM STATUS: " << kim.sprite.anim_status
+				  << "\nKIMSPRITE_ID[ANIM_STATUS]: " << kim.sprite.sprite_id[kim.sprite.anim_status]
+				  << "\nLANDEFFECTSPRITE_ID[ANIM_STATUS]: " << kim.effects[EFF_LAND_EFFECT].sprite_id[kim.effects[EFF_LAND_EFFECT].anim_status]
+				  << "\nKIMPALETTE: " << kim.sprite.pal_id
+				  << "\nLANDEFFECTPALETTE: " << kim.effects[EFF_LAND_EFFECT].pal_id
 				  << "\nFRAMES SALTANDO: " << kim.frames_jumping
 				  << "\nCAMBIO ESTADO PRIMARIO: " << kim.primary_status_changed
 				  << "\nALENTANDOSE: " << kim.slowing_down
 				  << "\nCAMBIO ANIMACION: " << kim.sprite.anim_status_changed
 				  << "\nPUEDE MOVERSE: " << kim.can_move
-				  << "\nPUEDE CORRER: " << kim.can_run
-				  << "\nPUEDE ESQUIVAR: " << kim.can_dodge
 				  << "\nESQUIVANDO: " << kim.dodging
 				  << "\nSALTANDO: " << kim.jumping
 				  << "\nMAP_SCROLL X: " << level_bg.map_scroll_x
 				  << "\nMAP_SCROLL Y: " << level_bg.map_scroll_y
 				  << "\nCHUNK_SCROLL X: " << level_bg.chunk_scroll_x
 				  << "\nCHUNK_SCROLL Y: " << level_bg.chunk_scroll_y
-				  << "\nVRAM: " << NF_TEXVRAM.free
-				  << "\nRIGHTCHUNKLOADED: " << level_bg.new_right_chunk_loaded
-				  << "\nLEFTCHUNKLOADED: " << level_bg.new_left_chunk_loaded
+				  << "\nRAMLEFT: " << info.fordblks
+				  << "\nRAMLEFT2: " << bytes
 				  << "\nFRAMES: " << frames;
-		
+		bytes = 0;
+	}
 		if(second_screen_enabled)
 		{
 		if(keysDown() & KEY_X)

@@ -17,6 +17,11 @@ class Sprite
 	public: //por ahora todos publicos pa testear, --luego hacerlos privados!! y hacer respectivos getters y setters--.
 	bool animated = false;
 	int num_sprites = 0;
+	int gfx_id[MAX_NUMBER_SPRITES];
+	int pal_id[MAX_NUMBER_SPRITES];
+	int sprite_id[MAX_NUMBER_SPRITES];
+	int gfx_vram_id[MAX_NUMBER_SPRITES];
+	int pal_vram_id[MAX_NUMBER_SPRITES];
 	int type = 0;
 	int anim = 0;
 	int anim_frame = 0;
@@ -43,16 +48,22 @@ class Sprite
 	bool looped = true;
 	bool can_move = true;
 	bool created = false;
+	bool mirrored = false;
+	bool rotscale = false;
 
     void assignSpriteDirs();
-    void assignSpritesMemory();
-    void freeSpritesMemory();
+    void assignSpritesRAM();
+	void assignSpritesVRAM();
+    void freeSpritesRAM();
+	void freeSpritesVRAM();
     void changeScreen();
     void createSprite();
 	void deleteSprite();
+	void createMirroredSprite();
     void animateSprite();
     void updateSpriteAndPalette();
     void updateSprite();
     void setupSprite();
+	void freePalVRAM();
 	void setupSprite(CHARACTERS);
 };

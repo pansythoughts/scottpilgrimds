@@ -16,7 +16,6 @@ void Character::setupCharacter()
 		sprite.looped = true;
 		sprite.screen = 0;
 	    sprite.type = SPR_CHARACTER;
-	    sprite.slot_id = 0;
 	    sprite.n_frames[A_IDLE] = 3;
 	    sprite.n_frames[A_WALK] = 5;
 	    sprite.n_frames[A_RUN] = 7;
@@ -38,14 +37,16 @@ void Character::setupSecondarySprites()
 	// sets up character's shadow.
 	shadow.type = SPR_SHADOW;
 	shadow.sprite_name = sprite.sprite_name + "_shadow";
-	shadow.slot_id = sprite.slot_id + 1;
 	shadow.setupSprite();
 
 	// sets up character's effects.
 	effects[EFF_RUN_EFFECT].type = SPR_RUN_EFFECT;
-	effects[EFF_RUN_EFFECT].sprite_name = sprite.sprite_name + "run_effects";
-	effects[EFF_RUN_EFFECT].slot_id = sprite.slot_id + 2;
+	effects[EFF_RUN_EFFECT].sprite_name = sprite.sprite_name + "_run_effect";
 	effects[EFF_RUN_EFFECT].setupSprite();
+	
+	effects[EFF_LAND_EFFECT].type = SPR_LAND_EFFECT;
+	effects[EFF_LAND_EFFECT].sprite_name = sprite.sprite_name + "_land_effect";
+	effects[EFF_LAND_EFFECT].setupSprite();
 }
 
 	// calculates the current screen position of the character.
@@ -192,10 +193,16 @@ void Character::moveCharacter(int bg_scroll_x, int bg_scroll_y)
 	// manages animation states.
 	if(secondary_status == S_NONE)
 	{
+		if(!effects[EFF_LAND_EFFECT].created && sprite.anim_status == A_JUMP && frames_jumping <=1)
+		{
+		effects[EFF_LAND_EFFECT].createMirroredSprite();
+		}
 	    switch(primary_status)
 	    {
 		    case P_IDLE:
-		    sprite.anim_status = A_IDLE; break;
+
+		    sprite.anim_status = A_IDLE;
+			break;
 		    case P_WALK:
 		    sprite.anim_status = A_WALK; break;
 		    case P_RUN:
@@ -229,13 +236,6 @@ void Character::moveCharacter(int bg_scroll_x, int bg_scroll_y)
 		// update frame counters.
 		frames_idle++;
 		frames_moving = 0;
-
-		// resets after some time idle.
-		if(frames_idle >= 25)
-		{
-			distance_moved_x = 0;
-		    distance_moved_y = 0;
-		}
 
 		// if it started jumping, keep the momentum.
 		if(jumping && vel_x == 0)
@@ -356,23 +356,30 @@ void Character::moveCharacter(int bg_scroll_x, int bg_scroll_y)
 	}
 
 	// calculates the distance moved since last idle.
+	
+	// resets after some time idle.
+	if(frames_idle >= 25)
+	{
+		distance_moved_x = 0;
+		distance_moved_y = 0;
+	}
+	else
+	{
 	distance_moved_x = map_pos_x - start_run_pos_x;
 	distance_moved_y = map_pos_y - start_run_pos_y;
-	
+	}
 	// key inputs.
 	// left.
 	if(key_held & KEY_LEFT && !(key_held & KEY_RIGHT))
 	{
 		sprite.flipped = true;
-		for(int i = 0; i < NUM_EFFECTS; i++)
-			effects[i].flipped = true;
+		effects[EFF_RUN_EFFECT].flipped = true;
 	}
 	// right.
 	if(key_held & KEY_RIGHT && !(key_held & KEY_LEFT))
 	{
 		sprite.flipped = false;
-		for(int i = 0; i < NUM_EFFECTS; i++)
-			effects[i].flipped = false;
+		effects[EFF_RUN_EFFECT].flipped = false;
 	}
 
 	if(!dodging)
@@ -443,8 +450,6 @@ void Character::moveCharacter(int bg_scroll_x, int bg_scroll_y)
 	acc_x = 0;
 	}
 	
-
-
 	// horizontal limits. (ACTUALIZAR ESTE Y EL DE ABAJO PARA TENER DISTINTOS LIMITES, DEPENDIENDO
 	// EL AVANCE DEL NIVEL).
 	if(map_pos_x <= -20)
@@ -487,8 +492,18 @@ void Character::moveCharacter(int bg_scroll_x, int bg_scroll_y)
 	// effects movement.
 	for(int i = 0; i < NUM_EFFECTS; i++)
 	{
-		effects[i].screen_pos_x = sprite.screen_pos_x - distance_moved_x;
-		effects[i].screen_pos_y = sprite.screen_pos_y - distance_moved_y - jump_height + 30;
+		switch(i)
+		{
+			case EFF_RUN_EFFECT:
+		    effects[i].screen_pos_x = sprite.screen_pos_x - distance_moved_x;
+		    effects[i].screen_pos_y = sprite.screen_pos_y - distance_moved_y - jump_height + 30;
+			break;
+			
+			case EFF_LAND_EFFECT:
+			effects[i].screen_pos_x = sprite.screen_pos_x;
+			effects[i].screen_pos_y = sprite.screen_pos_y - jump_height + 30;
+			break;
+		}
 	}
     
 	// did the states change?
@@ -504,6 +519,17 @@ void Character::moveCharacter(int bg_scroll_x, int bg_scroll_y)
 	{
 	if (map_pos_y >= CHAR_SCREEN_SIZE || sprite.screen_pos_y <= -30)
 	sprite.changeScreen();
+	}
+}
+
+void Character::updateCharacter(int bg_scroll_x, int bg_scroll_y)
+{
+	moveCharacter(bg_scroll_x, bg_scroll_y);
+	sprite.updateSprite();
+	shadow.updateSprite();
+	for(int i = 0; i < NUM_EFFECTS; i++)
+	{
+        effects[i].updateSprite();
 	}
 }
 

@@ -52,7 +52,7 @@ class Character
 	bool can_dodge = false;
 	int last_tap_time_x = 0;  
 	int last_tap_time_y = 0;  
-    int double_tap_threshold = 15;
+    const int double_tap_threshold = 15;
 	Sprite sprite;
 	Sprite shadow;
 
@@ -66,5 +66,6 @@ class Character
     void Jump();
     void doubleTap();
     void moveCharacter(int, int);
+	void updateCharacter(int, int);
     Character(CHARACTERS);
 };
