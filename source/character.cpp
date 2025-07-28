@@ -106,6 +106,7 @@ if(!jumping)
 	// stops jumping.
 	sprite.anim_frame = 12;
 	frames_jumping = 0;
+	vel_x = 0;
 	jumping = false;
 	}
 		
@@ -193,14 +194,14 @@ void Character::moveCharacter(int bg_scroll_x, int bg_scroll_y)
 	// manages animation states.
 	if(secondary_status == S_NONE)
 	{
+
+		// if was and stopped jumping, create landing effect.
 		if(!effects[EFF_LAND_EFFECT].created && sprite.anim_status == A_JUMP && frames_jumping <=1)
-		{
 		effects[EFF_LAND_EFFECT].createMirroredSprite();
-		}
+
 	    switch(primary_status)
 	    {
 		    case P_IDLE:
-
 		    sprite.anim_status = A_IDLE;
 			break;
 		    case P_WALK:
@@ -262,6 +263,14 @@ void Character::moveCharacter(int bg_scroll_x, int bg_scroll_y)
 
 		can_move = true;
 
+	    // cache the map position when it started walking.
+		if(frames_moving <= 1)
+		{
+		start_walk_pos_x = map_pos_x;
+		start_walk_pos_y = map_pos_y;
+		}
+
+
 		// horizontal movement.
 
 		if(!jumping)
@@ -300,7 +309,7 @@ void Character::moveCharacter(int bg_scroll_x, int bg_scroll_y)
 		if(frames_moving <= 1)
 		{
 		start_run_pos_x = map_pos_x;
-		start_run_pos_y = map_pos_y;
+		start_walk_pos_y = map_pos_y;
 		}
 
 		// horizontal movement.
@@ -360,13 +369,14 @@ void Character::moveCharacter(int bg_scroll_x, int bg_scroll_y)
 	// resets after some time idle.
 	if(frames_idle >= 25)
 	{
-		distance_moved_x = 0;
+		distance_ran_x = 0;
+		distance_walked_x = 0;
 		distance_moved_y = 0;
 	}
 	else
 	{
-	distance_moved_x = map_pos_x - start_run_pos_x;
-	distance_moved_y = map_pos_y - start_run_pos_y;
+	distance_ran_x = map_pos_x - start_run_pos_x;
+	distance_moved_y = map_pos_y - start_walk_pos_y;
 	}
 	// key inputs.
 	// left.
@@ -495,13 +505,13 @@ void Character::moveCharacter(int bg_scroll_x, int bg_scroll_y)
 		switch(i)
 		{
 			case EFF_RUN_EFFECT:
-		    effects[i].screen_pos_x = sprite.screen_pos_x - distance_moved_x;
+		    effects[i].screen_pos_x = sprite.screen_pos_x - distance_ran_x;
 		    effects[i].screen_pos_y = sprite.screen_pos_y - distance_moved_y - jump_height + 30;
 			break;
 			
 			case EFF_LAND_EFFECT:
 			effects[i].screen_pos_x = sprite.screen_pos_x;
-			effects[i].screen_pos_y = sprite.screen_pos_y - jump_height + 30;
+			effects[i].screen_pos_y = sprite.screen_pos_y - jump_height + 30 ;
 			break;
 		}
 	}

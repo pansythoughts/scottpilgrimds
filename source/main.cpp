@@ -1,19 +1,15 @@
+
 // le libraries.
 #include "libs.h"
-
-#include "input.h"
-#include "sprite.h"
-#include "character.h"
-#include "background.h"
+#include "game.h"
 
 
 // le global variables.
 
-bool nfInit;
-int frames = 0;
 
 volatile u8* ram = (volatile u8*)0x02000000;
 long bytes = 0;
+
 bool debug = false; // change this to allow for debug.
 
 //Prototipos de funciones.//
@@ -22,60 +18,22 @@ bool debug = false; // change this to allow for debug.
 int main() 
 {
 
-	defaultExceptionHandler();
-    //Se inicia el 'modo demo' para poder mostrar texto en la segunda pantalla.
-	consoleDemoInit();
+	Game game;
 
-    //Se inicia todo lo relacionado al sistema de archivos 'NITROFS' y la carpeta 'nitrofiles'
-	//(para acceder al sprite).
-	nfInit = nitroFSInit(NULL);
-	NF_SetRootFolder("NITROFS");
-
-	if(!nfInit){
-		std::cout<<"Hubo un error D:";
-
-		return 1;
-	}
-
-
-    //Se inicializa el modo de graficos  en la pantalla de arriba.
-	NF_Set2D(0, 0);//(screen, mode).
-
-	//Lo mismo en la segunda pantalla.
-    if(second_screen_enabled)
-	{
-	    NF_Set2D(1, 0);
-	    NF_InitSpriteSys(1);
-	}
-
-
-    //Se prepara todo lo relacionado al sistema de sprites.
-	NF_InitSpriteBuffers();
-	NF_InitSpriteSys(0); //'0' se refiere a la pantalla, en este caso es la superior.
-
-	//Se prepara todo lo relacionado al sistema de tiled backgrounds.
-	
-	NF_InitTiledBgBuffers();
-    NF_InitTiledBgSys(0); //(screen);
-
-	//Se prepara todo lo relacionado al sistema de sonido.
-	NF_InitRawSoundBuffers();
-
-
+    /*
 	//Se crea el fondo.
-	Background level_bg(FROZEN_SUBURBS);
+	LevelBackground level_bg(FROZEN_SUBURBS);
 
 	level_bg.createBackground();
 
+
 	//Se carga la musica.
-	NF_LoadRawSound("songs/song1", 0, 11025, 0);
-	NF_PlayRawSound(0, 127, 64, true, 0);
+	Song level_song(ANOTHER_WINTER);
+	level_song.loadChunkRAM();
+
 
 	//Se crea al personaje "kim".
 	Character kim(KIM);
-	//Se llenan sus atributos.
-	//(luego creare un constructor que incluya toda la wea de abajo).
-	//Se llaman a los metodos que alistan el sprite.
 	kim.sprite.createSprite();
 	kim.shadow.createSprite();
 
@@ -85,15 +43,14 @@ int main()
 	
 	//texto pitero :P
 	std::cout << "ESTO SE VA A BORRAR NOMAS EMPIECE EL BUCLE AAAAAAAAAAA";
-
-
+	*/
 	//Bucle principal
-	while (nfInit) 
+	while (game.nfInit) 
 	{
+		game.updateGame();
 
-		//OJO: NO LLAMAR ACA A NF_CreateSprite(), PUES HARA QUE LA ANIMACION SE ENTRECORTE.
-		//LLAMARLA UNA SOLA VEZ ANTES DEL LOOP.
 
+		/*
 		//Se cuentan los frames.
 		frames++;
 
@@ -105,12 +62,14 @@ int main()
 
 		level_bg.updateBackground(kim.map_pos_x, kim.map_pos_y);
 
-		info = mallinfo();
+		level_song.playSong();
+
 
 		if(debug)
 		{
 
 
+		// shitty ram used calculation lmao.
 		for (int i = 0; i < (0x023FFFFF - 0x02000000); i++)
         {
         if (ram[i] != 0)
@@ -158,15 +117,7 @@ int main()
 		if(keysDown() & KEY_X)
 		kim.sprite.changeScreen();
 		}
-
-		//Update NF OAM Settings
-		NF_SpriteOamSet(0);
-		NF_SpriteOamSet(1);
-		swiWaitForVBlank();
-
-		//Update OAM!
-		oamUpdate(&oamMain);
-		oamUpdate(&oamSub);
+        */
 	
 	}
 

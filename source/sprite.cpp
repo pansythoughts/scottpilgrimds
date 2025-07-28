@@ -269,7 +269,7 @@
 			num_sprites = 1;
 			looped = false;
 			n_frames[0] = 4;
-			anim_frame_period[0] = 5;
+			anim_frame_period[0] = 4;
 			can_move = true;
 			rotscale = false;
 			break;
@@ -281,7 +281,7 @@
 			num_sprites = 1;
 			looped = false;
 			n_frames[0] = 4;
-			anim_frame_period[0] = 5;
+			anim_frame_period[0] = 4;
 			can_move = false;
 			mirrored = true;
 			rotscale = false;

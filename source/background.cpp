@@ -2,7 +2,7 @@
 #include "background.h"
 #include "input.h"
 
-void Background::setupBackground()
+void LevelBackground::setupBackground()
 {
     switch(bg)
     {
@@ -27,7 +27,7 @@ void Background::setupBackground()
 
 }
 
-void Background::createBackground()
+void LevelBackground::createBackground()
 {
     // reserves memory for second (right) chunk of loaded background.
     // IMPORTANT: this WILL TAKE the memory that was originally destinated to
@@ -37,13 +37,14 @@ void Background::createBackground()
     vramSetBankC(VRAM_C_MAIN_BG_0x06020000);
     
 
-    // loads and creates left chunk.
+    // creates left chunk.
     NF_LoadTiledBg(bg_dirs[chunk].c_str(), bg_dirs[chunk].c_str(), size_x, size_y);
 	NF_CreateTiledBg(screen, layers[LEFT], bg_dirs[chunk].c_str());
 
-    // loads and creates right chunk.
+    // creates right chunk.
     NF_LoadTiledBg(bg_dirs[chunk + 1].c_str(), bg_dirs[chunk + 1].c_str(), size_x, size_y);
     NF_CreateTiledBg(screen, layers[RIGHT], bg_dirs[chunk + 1].c_str());
+    NF_HideBg(screen, layers[RIGHT]);
 
     // unload them from RAM.
     NF_UnloadTiledBg(bg_dirs[chunk].c_str());
@@ -55,7 +56,7 @@ void Background::createBackground()
 
 }
 
-void Background::deleteBackground()
+void LevelBackground::deleteBackground()
 {
     // deletes both layers of background.
     NF_DeleteTiledBg(screen, layers[0]);
@@ -63,7 +64,7 @@ void Background::deleteBackground()
 }
 
 // scroll system.
-void Background::updateScroll(int char_map_pos_x, int char_map_pos_y)
+void LevelBackground::updateScroll(int char_map_pos_x, int char_map_pos_y)
 {
     if(scrolled)
     {
@@ -100,11 +101,12 @@ void Background::updateScroll(int char_map_pos_x, int char_map_pos_y)
         }
         scrollNoLoop(screen, left_layer, chunk_scroll_x, chunk_scroll_y);
         scrollNoLoop(screen, right_layer, -SCREEN_WIDTH + chunk_scroll_x, chunk_scroll_y);
+        NF_ShowBg(screen, layers[RIGHT]);
 
     }
 }
 
-void Background::scrollNoLoop(int screen, int layer, int scroll_x, int scroll_y)
+void LevelBackground::scrollNoLoop(int screen, int layer, int scroll_x, int scroll_y)
 {
     
     if(screen == 0)
@@ -158,7 +160,7 @@ void Background::scrollNoLoop(int screen, int layer, int scroll_x, int scroll_y)
 
 }
 
-void Background::updateBackground(int char_map_pos_x, int char_map_pos_y)
+void LevelBackground::updateBackground(int char_map_pos_x, int char_map_pos_y)
 {
     
     // helper variables.
@@ -248,7 +250,7 @@ void Background::updateBackground(int char_map_pos_x, int char_map_pos_y)
 
 // deletes the map corresponding to the right half of a 512 x 256 background.
 // REALLY USEFUL for my BG scroll system, since the empty half tends to appear glitchy.
-void Background::deleteBGRightHalf(int layer)
+void LevelBackground::deleteBGRightHalf(int layer)
 {
     // creates pointer to the position in memory where the maps begin to be stored.
     u16* map = (u16*)(0x6000000 + (NF_TILEDBG_LAYERS[screen][layer].mapbase << 11));
@@ -259,7 +261,8 @@ void Background::deleteBGRightHalf(int layer)
 }
 
 
-Background::Background(int bg_id)
+
+LevelBackground::LevelBackground(int bg_id)
 {
     bg = bg_id;
     setupBackground();

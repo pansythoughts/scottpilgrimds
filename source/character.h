@@ -21,9 +21,11 @@ class Character
 	int last_idle_pos_x = 0;
 	int last_idle_pos_y = 0;
 	int start_run_pos_x = 0;
-	int start_run_pos_y = 0;
+	int start_walk_pos_x = 0;
+	int start_walk_pos_y = 0;
 	int start_jump_vel_x = 0;
-	int distance_moved_x = 0;
+	int distance_walked_x = 0;
+	int distance_ran_x = 0;
 	int distance_moved_y = 0;
 	float vel_x = 0;
 	float vel_y = 0;
@@ -52,7 +54,7 @@ class Character
 	bool can_dodge = false;
 	int last_tap_time_x = 0;  
 	int last_tap_time_y = 0;  
-    const int double_tap_threshold = 15;
+    int double_tap_threshold = 15;
 	Sprite sprite;
 	Sprite shadow;
 

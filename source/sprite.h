@@ -50,6 +50,7 @@ class Sprite
 	bool created = false;
 	bool mirrored = false;
 	bool rotscale = false;
+	int n_of_sprites = 0;
 
     void assignSpriteDirs();
     void assignSpritesRAM();

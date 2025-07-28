@@ -4,7 +4,7 @@
 #include "enums.h"
 
 
-class Background
+class LevelBackground
 {
     public:
     int bg = 0;
@@ -44,7 +44,7 @@ class Background
     void updateScroll(int char_map_pos_x, int char_map_pos_y);
     void updateBackground(int char_map_pos_x, int char_map_pos_y);
     void deleteBGRightHalf(int layer);
-    void loadChunk(int chunk_id);
 
-    Background(int bg_id);
+    LevelBackground(int bg_id);
 };
+
