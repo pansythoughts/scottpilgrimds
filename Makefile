@@ -12,9 +12,9 @@ ARM_NONE_EABI_PATH	?= $(WONDERFUL_TOOLCHAIN)/toolchain/gcc-arm-none-eabi/bin/
 # ===========
 
 NAME		:= $(shell basename $(CURDIR))
-GAME_TITLE	:= $(shell basename $(CURDIR)).nds
-GAME_SUBTITLE	:= NightFox’s lib example
-GAME_AUTHOR	:= github.com/knightfox75/nds_nflib
+GAME_TITLE	:= Scott Pilgrim DS
+GAME_SUBTITLE	:= shitty homebrew
+GAME_AUTHOR	:= pansythoughts
 GAME_ICON	:= $(BLOCKSDS)/sys/icon.bmp
 
 # Source code paths
