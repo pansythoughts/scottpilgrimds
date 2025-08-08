@@ -10,7 +10,6 @@
 volatile u8* ram = (volatile u8*)0x02000000;
 long bytes = 0;
 
-bool debug = false; // change this to allow for debug.
 
 //Prototipos de funciones.//
 
@@ -75,49 +74,9 @@ int main()
         if (ram[i] != 0)
             bytes++;
 		}
-	    
+	    */
 
-
-
-
-		//CONSOLE DEBUG//
-		
-		consoleClear();
-		
-		std::cout << "\nSTART POS: " << kim.jump_start_pos
-		          << "\nCURRENT SCREEN POS Y: " << kim.sprite.screen_pos_y
-				  << "\nCURRENT SCREEN POS X: " << kim.sprite.screen_pos_x
-				  << "\nCURRENT MAP POS Y: " << kim.map_pos_y
-				  << "\nCURRENT MAP POS X: " << kim.map_pos_x
-				  << "\nSTATUS PRINCIPAL: " << kim.primary_status
-				  << "\nSTATUS SECUNDARIO: " << kim.secondary_status
-				  << "\nANIM STATUS: " << kim.sprite.anim_status
-				  << "\nKIMSPRITE_ID[ANIM_STATUS]: " << kim.sprite.sprite_id[kim.sprite.anim_status]
-				  << "\nLANDEFFECTSPRITE_ID[ANIM_STATUS]: " << kim.effects[EFF_LAND_EFFECT].sprite_id[kim.effects[EFF_LAND_EFFECT].anim_status]
-				  << "\nKIMPALETTE: " << kim.sprite.pal_id
-				  << "\nLANDEFFECTPALETTE: " << kim.effects[EFF_LAND_EFFECT].pal_id
-				  << "\nFRAMES SALTANDO: " << kim.frames_jumping
-				  << "\nCAMBIO ESTADO PRIMARIO: " << kim.primary_status_changed
-				  << "\nALENTANDOSE: " << kim.slowing_down
-				  << "\nCAMBIO ANIMACION: " << kim.sprite.anim_status_changed
-				  << "\nPUEDE MOVERSE: " << kim.can_move
-				  << "\nESQUIVANDO: " << kim.dodging
-				  << "\nSALTANDO: " << kim.jumping
-				  << "\nMAP_SCROLL X: " << level_bg.map_scroll_x
-				  << "\nMAP_SCROLL Y: " << level_bg.map_scroll_y
-				  << "\nCHUNK_SCROLL X: " << level_bg.chunk_scroll_x
-				  << "\nCHUNK_SCROLL Y: " << level_bg.chunk_scroll_y
-				  << "\nRAMLEFT: " << info.fordblks
-				  << "\nRAMLEFT2: " << bytes
-				  << "\nFRAMES: " << frames;
-		bytes = 0;
-	}
-		if(second_screen_enabled)
-		{
-		if(keysDown() & KEY_X)
-		kim.sprite.changeScreen();
-		}
-        */
+	
 	
 	}
 

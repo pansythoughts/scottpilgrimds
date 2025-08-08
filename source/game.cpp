@@ -3,7 +3,6 @@
 
 void Game::initGame()
 {
-    game_state = TITLE_SCREEN;
 
     defaultExceptionHandler();
 
@@ -11,7 +10,6 @@ void Game::initGame()
 	//(para acceder al sprite).
 	nfInit = nitroFSInit(NULL);
 	NF_SetRootFolder("NITROFS");
-
 
 
     //Se inicializa el modo de graficos  en la pantalla de arriba.
@@ -34,6 +32,9 @@ void Game::initGame()
 
 	//Se prepara todo lo relacionado al sistema de sonido.
 	NF_InitRawSoundBuffers();
+
+    if(debug)
+    consoleDemoInit();	
 
 }
 
@@ -95,7 +96,7 @@ void Game::updateGame()
 
 
         // switching to next state/screen.
-        if(frames_state > 15 && key_pressed & KEY_START)
+        if(frames_state > 15 && (key_pressed & KEY_START || key_pressed & KEY_TOUCH ))
         changing_state = true;
 
         if(changing_state)
@@ -167,6 +168,8 @@ void Game::updateGame()
             NF_LoadSpritePal("palette/character_selection_arrow", 3);
             NF_VramSpriteGfx(1, 3, 3, false);
             NF_VramSpritePal(1, 3, 3);
+            NF_LoadTextFont("fonts/font1", "font1", 256, 256, 0);
+
 
             // song :D
             NF_PlayRawSound(0, 127, 64, true, 0);
@@ -174,24 +177,33 @@ void Game::updateGame()
             // curtain background.
             NF_CreateTiledBg(0, 0, "curtain");
 
+
             // cleans lower half of the background.
             u16* curtain_map = (u16*)(0x6000000 + (NF_TILEDBG_LAYERS[0][0].mapbase << 11));
 
             // sets to 0 the positions corresponding to the lower half (and a bit more :P).
-            for(int i = 768; i < 2048; i++)
+            for(int i = 896; i < 2048; i++)
             *(curtain_map + i) = 0;
 
+            NF_CreateTextLayer(0, 1, 0, "font1");
+            NF_DefineTextColor(0, 1, 0, 31, 31, 31); // 0 = WHITE
+            NF_DefineTextColor(0, 1, 1, 24, 11, 5); // 1 = ORANGE
+            NF_DefineTextColor(0, 1, 2, 30, 22, 3); // 2 = YELLOW-ORANGE
+
+            NF_SetTextColor(0, 1, 1);
         }
+
+        NF_UpdateTextLayers();
 
         // curtain animation (only downwards for now).
         if(frames_state <= 10)
         {
             if(frames_state % 4 == 0)
-            NF_ScrollBg(0, 0, 0, 100 - (10 * frames_state));
+            NF_ScrollBg(0, 0, 0, 90 - (10 * frames_state));
         }
         else
         {
-
+            // once the curtain is totally settled...
             if(frames_state == 11)
             {
                 // "PLEASE SELECT A CHARACTER" text.
@@ -200,9 +212,9 @@ void Game::updateGame()
                     NF_CreateSprite(0, i, 0, 0, 0, 0);
                     NF_SpriteFrame(0, i, i);
                 }
-                NF_MoveSprite(0, 0, 65, 60);  // "PLEASE"
-                NF_MoveSprite(0, 1, 115, 60); // "SELECT A"
-                NF_MoveSprite(0, 2, 90, 75);  // "CHARACTER"
+                NF_MoveSprite(0, 0, 65, 65);  // "PLEASE"
+                NF_MoveSprite(0, 1, 115, 65); // "SELECT A"
+                NF_MoveSprite(0, 2, 90, 80);  // "CHARACTER"
                 NF_CreateSprite(0, 3, 1, 1, 95, 95);
 
                 NF_CreateSprite(0, 4, 2, 2, 97, 170);
@@ -214,33 +226,43 @@ void Game::updateGame()
                 NF_SpriteRotScale(1, 0, 0, 400, 400);
                 NF_SpriteRotScale(1, 1, 256, 400, 400);
 
+                NF_WriteText(0, 1, 13, 23, "LEVEL 1"); // i'm not coding actual character levels at this point :P.
+
                 // YEAH, EVERYTHING HARD-CODED, COPE.
             }
 
+            // arrows movement.
             if(frames_state % 6 == 0)
             {
-                NF_MoveSprite(1, 5, 110, 20);
-                NF_MoveSprite(1, 6, 110, 160);
+                NF_MoveSprite(1, 5, 110, 5);
+                NF_MoveSprite(1, 6, 110, 165);
             }
              if (frames_state % 12 == 0)
             {
-                NF_MoveSprite(1, 5, 110, 10);
+                NF_MoveSprite(1, 5, 110, 0);
                 NF_MoveSprite(1, 6, 110, 170);
             }
 
-            if(key_pressed & KEY_UP)
+            if(key_pressed & KEY_UP || (touch.px > 115 && touch.px < 140 && touch.py > 10 && touch.py < 30))
             {
+                // selection logic. (not really used for now.)
                 if(character_selected > 0)
                 character_selected--;
                 else
                 character_selected = STILLS;
+
+                NF_CreateTextLayer(1, 1, 0, "font1");
+                NF_WriteText(1, 1, 1, 12, "ONLY KIM AVAILABLE FOR NOW  :C");
             }
-            else if(key_pressed & KEY_DOWN)
+            else if(key_pressed & KEY_DOWN || (touch.px > 115 && touch.px < 140 && touch.py > 165 && touch.py < 185))
             {
                 if(character_selected < 4)
                 character_selected++;
                 else
                 character_selected = SCOTT;
+
+                NF_CreateTextLayer(1, 1, 0, "font1");
+                NF_WriteText(1, 1, 1, 12, "ONLY KIM AVAILABLE FOR NOW  :C");
             }
 
             if(key_pressed & KEY_A)
@@ -265,19 +287,37 @@ void Game::updateGame()
             soundKill(0);
 
             // unloads all sprites.
+            // OKAY, this is horribly hardcoded, maybe will be switching all this sht to SimpleSprite objects.
             for(int i = 0; i < 5; i++)
             {
                 NF_DeleteSprite(0, i);
-                if(i < 1)
+                if(i > 2)
+                NF_DeleteSprite(1, i + 2);
+                
+                if(i < 4)
                 {
                     NF_UnloadSpriteGfx(i);
                     NF_UnloadSpritePal(i);
+                    if(i < 3)
+                    {
+                    NF_FreeSpriteGfx(0, i);
+                    NF_SPRPALSLOT[0][i].inuse = false;
+                    }
+                    else
+                    {
+                    NF_FreeSpriteGfx(1, i);
+                    NF_SPRPALSLOT[1][i].inuse = false;
+                    }
                 }
             }
+
 
             // unloads the rest of the stuff.
             NF_UnloadTiledBg("curtain");
             NF_UnloadRawSound(0);
+            NF_ClearTextLayer(0, 1);
+
+            // finally changes to le level.
             game_state = LEVEL;
         }
         break;
@@ -285,10 +325,11 @@ void Game::updateGame()
         case LEVEL:
         if(frames_state == 0)
         {
+            setBrightness(3, -16);
             changing_state = false;
             frames_changing_state = 0;
             //Se crea el fondo.
-	        level_bg = new LevelBackground(FROZEN_SUBURBS);
+	        level_bg = new LevelBackground(B_FROZEN_SUBURBS);
 
 	        level_bg->createBackground();
 
@@ -304,15 +345,59 @@ void Game::updateGame()
 	        level_character->shadow.createSprite();
         }
 
+        if(frames_state < 300)
+        {
+        levelInCutscene();
+        }
+        else
+        {
+        if(frames_state >= 300)
+        levelLowerUI();
+
+
         //Metodos para actualizar el sprite cada frame.
 		level_character->updateCharacter(level_bg->map_scroll_x, level_bg->map_scroll_y);
 
 		level_bg->updateBackground(level_character->map_pos_x, level_character->map_pos_y);
 
 		level_song->playSong();
+        }
 
 
     }
+
+    //CONSOLE DEBUG//
+		
+		if(debug)
+		{
+		consoleClear();
+		
+		std::cout << "\nSTART POS: " << level_character->jump_start_pos
+		          << "\nCURRENT SCREEN POS Y: " << level_character->sprite.screen_pos_y
+				  << "\nCURRENT SCREEN POS X: " << level_character->sprite.screen_pos_x
+				  << "\nCURRENT MAP POS Y: " << level_character->map_pos_y
+				  << "\nCURRENT MAP POS X: " << level_character->map_pos_x
+				  << "\nSTATUS PRINCIPAL: " << level_character->primary_status
+				  << "\nSTATUS SECUNDARIO: " << level_character->secondary_status
+				  << "\nANIM STATUS: " << level_character->sprite.anim_status
+				  << "\nKIMSPRITE_ID[ANIM_STATUS]: " << level_character->sprite.sprite_id[level_character->sprite.anim_status]
+				  << "\nLANDEFFECTSPRITE_ID[ANIM_STATUS]: " << level_character->effects[EFF_LAND_EFFECT].sprite_id[level_character->effects[EFF_LAND_EFFECT].anim_status]
+				  << "\nKIMPALETTE: " << level_character->sprite.pal_id
+				  << "\nLANDEFFECTPALETTE: " << level_character->effects[EFF_LAND_EFFECT].pal_id
+				  << "\nFRAMES SALTANDO: " << level_character->frames_jumping
+				  << "\nCAMBIO ESTADO PRIMARIO: " << level_character->primary_status_changed
+				  << "\nALENTANDOSE: " << level_character->slowing_down
+				  << "\nCAMBIO ANIMACION: " << level_character->sprite.anim_status_changed
+				  << "\nPUEDE MOVERSE: " << level_character->can_move
+				  << "\nESQUIVANDO: " << level_character->dodging
+				  << "\nSALTANDO: " << level_character->jumping
+				  << "\nMAP_SCROLL X: " << level_bg->map_scroll_x
+				  << "\nMAP_SCROLL Y: " << level_bg->map_scroll_y
+				  << "\nCHUNK_SCROLL X: " << level_bg->chunk_scroll_x
+				  << "\nCHUNK_SCROLL Y: " << level_bg->chunk_scroll_y
+                  << "\nFRAMES_FADING: " << frames_fading
+				  << "\nFRAMES: " << frames;
+		}
 
     //Update NF OAM Settings
 	NF_SpriteOamSet(0);
@@ -334,6 +419,128 @@ void Game::updateGame()
     game_state_changed = (past_game_state != game_state);
 }
 
+
+void Game::fadeIn(int screen)
+{
+
+    if(!fading)
+    fading = true;
+
+    brightness = -16 + (frames_fading * 16 ) / FADE_DURATION;
+
+    setBrightness(screen, brightness);
+    frames_fading++;
+
+    if(frames_fading >= FADE_DURATION)
+    fading = false;
+}
+
+void Game::levelInCutscene()
+{
+
+    if(frames_fading < FADE_DURATION)
+    fadeIn(3);
+
+    if(frames_state == 0)
+    {
+    level_bg->map_scroll_y = 46;
+    level_bg->chunk_scroll_y = 46;
+    level_bg->scrollNoLoop(level_bg->screen, level_bg->layers[LEFT], level_bg->chunk_scroll_x, level_bg->chunk_scroll_y);
+    level_character->sprite.anim_status = A_RUN;
+    level_character->sprite.anim_status_changed = true;
+    level_character->sprite.screen_pos_x = -60;
+    level_character->sprite.screen_pos_y = 70;
+    level_character->shadow.screen_pos_x = level_character->sprite.screen_pos_x;
+    level_character->shadow.screen_pos_y = level_character->sprite.screen_pos_y + 5;
+    level_character->sprite.updateSprite();
+    level_character->shadow.updateSprite();
+    }
+
+    if(frames_state >= 120 && frames_state < 160)
+    {
+        level_character->sprite.screen_pos_x += 3;
+        level_character->shadow.screen_pos_x = level_character->sprite.screen_pos_x;
+        level_character->shadow.screen_pos_y = level_character->sprite.screen_pos_y + 5;
+        level_character->sprite.updateSprite();
+        level_character->shadow.updateSprite();
+        level_character->sprite.anim_status_changed = false;
+    }
+     if(frames_state >= 158)
+    {
+        if(frames_state == 158)
+        level_character->sprite.anim_status_changed = true;
+        else
+        level_character->sprite.anim_status_changed = false;
+
+        level_character->map_pos_x = level_character->sprite.screen_pos_x;
+        level_character->map_pos_y = level_character->sprite.screen_pos_y + level_bg->map_scroll_y;
+        level_character->sprite.anim_status = A_IDLE;
+        level_character->sprite.updateSprite();
+    }
+}
+
+void Game::levelLowerUI()
+{
+
+    switch(level_character->char_id)
+    {
+        case KIM:
+
+        if(!level_lower_ui_init)
+        {
+            level_lower_ui_init = true;
+
+            char_letters = new SimpleSprite(1, 64, 64, "kim_pine_letters", false, 2, false);
+            char_image = new SimpleSprite(1, 64, 64, "kim_pine_image", false, 2, false);
+            char_icon = new SimpleSprite(1, 32, 32, "kim_icon", false, 1, false);
+            scroll_arrow = new SimpleSprite(1, 8, 8, "scroll_arrow", false, 1, false);
+            scroll_bar = new SimpleSprite(1, 16, 16, "scroll_bar", false, 23, true);
+
+            char_image->createSprite(150, 120);
+            char_letters->createSprite(10, 120);
+            scroll_arrow->createSprite(20, 40);
+            scroll_bar->createSprite(20, 50);
+            char_icon->createSprite(13, 20);
+       
+            NF_MoveSprite(1, char_image->oam_id[1], char_image->pos_x + 45, char_image->pos_y);
+            NF_MoveSprite(1, char_letters->oam_id[1], char_letters->pos_x + 64, char_image->pos_y);
+
+            for(int i = 0; i < scroll_bar->num_of_parts; i++)
+            {
+                NF_MoveSprite(1, scroll_bar->oam_id[i], scroll_bar->pos_x + (i * (scroll_bar->size_x - 7)), scroll_bar->pos_y);
+
+                if(i == 0 || i == (scroll_bar->num_of_parts - 1))
+                {
+                    // set to part/frame 0 the first and last parts.
+                    NF_SpriteFrame(1, scroll_bar->oam_id[i], 0);
+
+                    if(i == (scroll_bar->num_of_parts - 1))
+                    {
+                        NF_HflipSprite(1, scroll_bar->oam_id[i], true);
+                    }
+                }
+                else
+                    NF_SpriteFrame(1, scroll_bar->oam_id[i], 1);
+            }
+        }
+
+            switch(current_level)
+            {
+                case L_FROZEN_SUBURBS:
+                lvl_scroll_factor = 0.027f;
+                break;
+            }
+            
+            scroll_arrow->pos_x = 20 + (level_character->map_pos_x * lvl_scroll_factor);
+            char_icon->pos_x = 13 + (level_character->map_pos_x * lvl_scroll_factor);
+
+            NF_MoveSprite(1, scroll_arrow->oam_id[0], scroll_arrow->pos_x, scroll_arrow->pos_y);
+            NF_MoveSprite(1, char_icon->oam_id[0], char_icon->pos_x, char_icon->pos_y);
+
+        break;
+
+    }
+}
 
 Game::Game()
 {

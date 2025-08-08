@@ -11,6 +11,8 @@ class LevelBackground
     std::string bg_chunks[2];
     std::string bg_name = "";
     std::string bg_dirs[32];
+    volatile int frames = 0;
+    volatile int frames_fading = 0;
     int n_of_files = 0;
     bool scrolled = false;
     int size_x = 0;

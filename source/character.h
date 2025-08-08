@@ -69,5 +69,6 @@ class Character
     void doubleTap();
     void moveCharacter(int, int);
 	void updateCharacter(int, int);
+	void mapCollision(LEVELS current_lvl);
     Character(CHARACTERS);
 };

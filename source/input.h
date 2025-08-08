@@ -8,5 +8,6 @@ extern int key_down_repeat;
 extern int key_up;
 extern int last_dpad_key;
 extern int second_screen_enabled;
+extern touchPosition touch;
 
 void scanInput();

@@ -464,6 +464,8 @@ void Character::moveCharacter(int bg_scroll_x, int bg_scroll_y)
 	// EL AVANCE DEL NIVEL).
 	if(map_pos_x <= -20)
 	map_pos_x = -20;
+	else if(map_pos_x >= 7690)
+	map_pos_x = 7690;
 
 	
 	//vertical limits.
@@ -541,6 +543,18 @@ void Character::updateCharacter(int bg_scroll_x, int bg_scroll_y)
 	{
         effects[i].updateSprite();
 	}
+}
+
+
+void Character::mapCollision(LEVELS current_lvl)
+{
+	switch(current_lvl)
+	{
+		case L_FROZEN_SUBURBS:
+
+		break;
+	}
+
 }
 
 // le constructor.

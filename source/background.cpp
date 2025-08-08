@@ -6,7 +6,7 @@ void LevelBackground::setupBackground()
 {
     switch(bg)
     {
-        case FROZEN_SUBURBS:
+        case B_FROZEN_SUBURBS:
 
         bg_name = "frozen_suburbs";
         bg_chunks[LEFT] = "frozen_suburbs_left";
@@ -53,6 +53,7 @@ void LevelBackground::createBackground()
     // wipes the right half of both backgrounds. avoids glitchy graphics on the empty half.
     deleteBGRightHalf(layers[0]);
     deleteBGRightHalf(layers[1]);
+
 
 }
 
@@ -246,6 +247,7 @@ void LevelBackground::updateBackground(int char_map_pos_x, int char_map_pos_y)
 
     // updates le scroll.
     updateScroll(char_map_pos_x, char_map_pos_y);
+    frames++;
 }
 
 // deletes the map corresponding to the right half of a 512 x 256 background.
@@ -259,6 +261,8 @@ void LevelBackground::deleteBGRightHalf(int layer)
     for(int i = 1025; i < 2048; i++)
         *(map + i) = 0;
 }
+
+
 
 
 
