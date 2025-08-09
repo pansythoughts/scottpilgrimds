@@ -4,33 +4,33 @@
 void Game::initGame()
 {
 
+    // when an excepction occurs, at least it puts out some text lol.
     defaultExceptionHandler();
 
-    //Se inicia todo lo relacionado al sistema de archivos 'NITROFS' y la carpeta 'nitrofiles'
-	//(para acceder al sprite).
+    // nitrofiles init (game files).
 	nfInit = nitroFSInit(NULL);
 	NF_SetRootFolder("NITROFS");
 
 
-    //Se inicializa el modo de graficos  en la pantalla de arriba.
+    // graphic modes init (mode 0 for both screens).
 	NF_Set2D(0, 0);
     NF_Set2D(1, 0);
 
-    //Se prepara todo lo relacionado al sistema de sprites.
+    // sprite system init.
 	NF_InitSpriteBuffers();
 	NF_InitSpriteSys(0);
     NF_InitSpriteSys(1);
 
-	//Se prepara todo lo relacionado al sistema de tiled backgrounds.
-	
+	// tiled background system init.
 	NF_InitTiledBgBuffers();
     NF_InitTiledBgSys(0);
     NF_InitTiledBgSys(1);
 
+    // text system init.
     NF_InitTextSys(0);
     NF_InitTextSys(1);
 
-	//Se prepara todo lo relacionado al sistema de sonido.
+	// sound system init.
 	NF_InitRawSoundBuffers();
 
     if(debug)
@@ -328,18 +328,14 @@ void Game::updateGame()
             setBrightness(3, -16);
             changing_state = false;
             frames_changing_state = 0;
-            //Se crea el fondo.
+            
 	        level_bg = new LevelBackground(B_FROZEN_SUBURBS);
-
 	        level_bg->createBackground();
 
-
-	        //Se carga la musica.
+	        
 	        level_song = new Song(ANOTHER_WINTER);
 	        level_song->loadChunkRAM();
 
-
-	        //Se crea al personaje "kim".
 	        level_character = new Character(KIM);
 	        level_character->sprite.createSprite();
 	        level_character->shadow.createSprite();
@@ -347,12 +343,12 @@ void Game::updateGame()
 
         if(frames_state < 300)
         {
-        levelInCutscene();
+            levelInCutscene();
         }
         else
         {
-        if(frames_state >= 300)
-        levelLowerUI();
+            if(frames_state >= 300)
+            levelLowerUI();
 
 
         //Metodos para actualizar el sprite cada frame.

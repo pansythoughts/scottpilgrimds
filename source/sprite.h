@@ -25,9 +25,10 @@ constexpr uint8_t NUM_EFFECTS = 2;
 // (pa los distintos estados del personaje, por ejemplo), pero que la otra sea para sprites que
 // solo son una 'imagen' realmente.
 
+
 class Sprite
 {
-	public: //por ahora todos publicos pa testear, --luego hacerlos privados!! y hacer respectivos getters y setters--.
+	public: 
 	bool animated = false;
 	int num_sprites = 0;
 	int gfx_id[MAX_NUMBER_SPRITES];
@@ -78,7 +79,6 @@ class Sprite
     void updateSpriteAndPalette();
     void updateSprite();
     void setupSprite();
-	void freePalVRAM();
 	void setupSprite(CHARACTERS);
 };
 

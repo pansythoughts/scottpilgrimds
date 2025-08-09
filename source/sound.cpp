@@ -36,9 +36,9 @@ void Song::loadChunkRAM()
     {
         if(NF_RAWSOUND[i].available)
         {
-        NF_LoadRawSound(song_dirs[chunk].c_str(), i, 11025, 0);
-        slot_id = i;
-        break;
+            NF_LoadRawSound(song_dirs[chunk].c_str(), i, 11025, 0);
+            slot_id = i;
+            break;
         }
     }
 

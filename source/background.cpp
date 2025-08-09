@@ -264,8 +264,6 @@ void LevelBackground::deleteBGRightHalf(int layer)
 
 
 
-
-
 LevelBackground::LevelBackground(int bg_id)
 {
     bg = bg_id;

@@ -61,54 +61,53 @@ void Character::mapToScreenPos(int map_scroll_x, int map_scroll_y)
 void Character::Jump()
 {
 	
+    if(!jumping)
+    {
+	    start_jump_vel_x = vel_x;
+	    sprite.anim_frame = 0;
+	    vel_x = 0;
+	    jumping = true;
 
-if(!jumping)
-{
-	start_jump_vel_x = vel_x;
-	sprite.anim_frame = 0;
-	vel_x = 0;
-	jumping = true;
+	    // applies initial velocity.
+	    if(!dodging)
+	    jump_vel_y = -6.7;
+	    else
+	    jump_vel_y = -4;
 
-	// applies initial velocity.
-	if(!dodging)
-	jump_vel_y = -6.7;
-	else
-	jump_vel_y = -4;
-
-	}
+	    }
 		
-	if(jumping)
-	frames_jumping++;
+	    if(jumping)
+	    frames_jumping++;
 
-	if(frames_jumping >= 1 && jumping)
-	{
-	// jump physics.
-	jump_acc_y = 0.3;
-	jump_vel_y += jump_acc_y;
-	jump_height += jump_vel_y;
-	}
+	    if(frames_jumping >= 1 && jumping)
+	    {
+	    // jump physics.
+	    jump_acc_y = 0.3;
+	    jump_vel_y += jump_acc_y;
+	    jump_height += jump_vel_y;
+	    }
 
-	// controls animation frames (so that the animation happens as in the original game :p).
-	if(jump_vel_y <= 0 && jump_vel_y >= -0.5 && !dodging)
-	{
-		if(sprite.anim_frame == 1 || sprite.anim_frame == 3)
-		sprite.anim_direction *= -1;
-	}
-	else
-		sprite.anim_direction = 1;
+	    // controls animation frames (so that the animation happens as in the original game :p).
+	    if(jump_vel_y <= 0 && jump_vel_y >= -0.5 && !dodging)
+	    {
+		    if(sprite.anim_frame == 1 || sprite.anim_frame == 3)
+		    sprite.anim_direction *= -1;
+	    }
+	    else
+		    sprite.anim_direction = 1;
 
-	// same as before.
-	if(jump_height <= 2 && jump_height >= 6 && frames_jumping > 20)
-	sprite.anim_frame = 12;
+	    // same as before.
+	    if(jump_height <= 2 && jump_height >= 6 && frames_jumping > 20)
+	    sprite.anim_frame = 12;
 
-	if(jump_height >= 0)
-	{
-	// stops jumping.
-	sprite.anim_frame = 12;
-	frames_jumping = 0;
-	vel_x = 0;
-	jumping = false;
-	}
+	    if(jump_height >= 0)
+	    {
+	    // stops jumping.
+	    sprite.anim_frame = 12;
+	    frames_jumping = 0;
+	    vel_x = 0;
+	    jumping = false;
+	    }
 		
 }
 	
@@ -196,7 +195,7 @@ void Character::moveCharacter(int bg_scroll_x, int bg_scroll_y)
 	{
 
 		// if was and stopped jumping, create landing effect.
-		if(!effects[EFF_LAND_EFFECT].created && sprite.anim_status == A_JUMP && frames_jumping <=1)
+		if(!effects[EFF_LAND_EFFECT].created && sprite.anim_status == A_JUMP && frames_jumping <= 1)
 		effects[EFF_LAND_EFFECT].createMirroredSprite();
 
 	    switch(primary_status)
@@ -291,7 +290,7 @@ void Character::moveCharacter(int bg_scroll_x, int bg_scroll_y)
 		else if (key_held & KEY_UP && !(key_held & KEY_DOWN))
 		vel_y = -walk_speed;
 		else 
-		vel_y = 0; //ya que en el juego original no hay slow down en el eje y :D
+		vel_y = 0; // no y-axis slowdown on original game :D
 
 		break;
 
@@ -332,7 +331,7 @@ void Character::moveCharacter(int bg_scroll_x, int bg_scroll_y)
 		else if (key_held & KEY_UP && !(key_held & KEY_DOWN))
 		vel_y = -walk_speed;
 		else
-		vel_y = 0; //ya que en el juego original no hay slow down en el eje y :D
+		vel_y = 0; // no y-axis slowdown on original game :D
 
 		
 		break;
@@ -375,10 +374,12 @@ void Character::moveCharacter(int bg_scroll_x, int bg_scroll_y)
 	}
 	else
 	{
-	distance_ran_x = map_pos_x - start_run_pos_x;
-	distance_moved_y = map_pos_y - start_walk_pos_y;
+	    distance_ran_x = map_pos_x - start_run_pos_x;
+	    distance_moved_y = map_pos_y - start_walk_pos_y;
 	}
-	// key inputs.
+
+	// key inputs. //
+
 	// left.
 	if(key_held & KEY_LEFT && !(key_held & KEY_RIGHT))
 	{
@@ -437,22 +438,6 @@ void Character::moveCharacter(int bg_scroll_x, int bg_scroll_y)
 	acc_x = 0;
 	}
 
-	/*INNECESARIO, EN EL JUEGO ORIGINAL NO HAY DESACELERACION EN EL EJE Y :D
-	//Vertical. REPENSAR CONDICION DE ACA, NO SIRVE, BUGEA, CACA
-	if((primary_status_changed) && !(key_held & (KEY_UP | KEY_DOWN)) || (key_held & KEY_UP && key_held & KEY_DOWN))
-	{
-
-	slowing_down = true;
-
-	if (vel_y > 0) 
-	acc_y = -0.5;
-	else if (vel_y < 0) 
-	acc_y = 0.5;
-	else 
-	acc_y = 0;
-	}
-	*/
-
 	if(std::abs(vel_x) <= 0.5f)
 	{
 	slowing_down = false;
@@ -460,8 +445,7 @@ void Character::moveCharacter(int bg_scroll_x, int bg_scroll_y)
 	acc_x = 0;
 	}
 	
-	// horizontal limits. (ACTUALIZAR ESTE Y EL DE ABAJO PARA TENER DISTINTOS LIMITES, DEPENDIENDO
-	// EL AVANCE DEL NIVEL).
+	// horizontal limits.
 	if(map_pos_x <= -20)
 	map_pos_x = -20;
 	else if(map_pos_x >= 7690)
@@ -526,7 +510,7 @@ void Character::moveCharacter(int bg_scroll_x, int bg_scroll_y)
     // character frame count.
     frames++;
 
-	// mechanic to let the character move betweens screens. (shitty)
+	// mechanic to let the character move betweens screens. (shitty, now unused)
 	if(second_screen_enabled)
 	{
 	if (map_pos_y >= CHAR_SCREEN_SIZE || sprite.screen_pos_y <= -30)
@@ -546,6 +530,7 @@ void Character::updateCharacter(int bg_scroll_x, int bg_scroll_y)
 }
 
 
+// todo
 void Character::mapCollision(LEVELS current_lvl)
 {
 	switch(current_lvl)

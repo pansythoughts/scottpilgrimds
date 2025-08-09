@@ -2,6 +2,8 @@
 #include "libs.h"
 #include "input.h"
 
+// MAYBE could add all of these things to the Game class...
+
 int key_pressed = 0;
 int key_held = 0;
 int key_current = 0;

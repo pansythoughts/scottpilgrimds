@@ -36,6 +36,7 @@ class Game
     Song *level_song;
     Character *level_character;
 
+    // maybe could all of these objects to a LevelLowerUI struct. //
     SimpleSprite *char_letters;
     SimpleSprite *char_image;
     SimpleSprite *char_icon;

@@ -1,7 +1,7 @@
 #include "sprite.h"
 #include "libs.h"
 
-// le methods.
+
 
 	// assigns directories.
     void Sprite::assignSpriteDirs()
@@ -244,18 +244,6 @@
         }
     }
 
-	void Sprite::freePalVRAM()//SHHHITTYYY DONT USE
-	{
-		u32 address = 0x06890000 + (pal_vram_id[anim_status] * 256 * 2);
-        memset((void *)address, 0, NF_SPR256PAL[pal_id[anim_status]].size);
-		NF_SPRPALSLOT[screen][pal_vram_id[anim_status]].inuse = false;
-
-		NF_SPRVRAM[screen].free += NF_SPR256PAL[pal_id[anim_status]].size;
-		NF_SPRVRAM[screen].pos[NF_SPRVRAM[screen].deleted] = address;
-		NF_SPRVRAM[screen].size[NF_SPRVRAM[screen].deleted] = NF_SPR256PAL[pal_id[anim_status]].size;
-		NF_SPRVRAM[screen].deleted++;
-		NF_SPRVRAM[screen].fragmented += NF_SPR256PAL[pal_id[anim_status]].size;
-	}
 
     // sets up sprite.
     void Sprite::setupSprite()
@@ -355,30 +343,30 @@
 
 		for(int j = 0; j < num_of_parts; j++)
 		{
-		// searches for a free OAM slot, and loads the sprite to it.
-		for(int i = 0; i < 128; i++)
-		{
-			if(!NF_SPRITEOAM[screen][i].created)
-			{
-				// if made of many parts, ALL THE PARTS WILL BE AT THE SAME POSITION
-				// so... adjust manually.
+		    // searches for a free OAM slot, and loads the sprite to it.
+		    for(int i = 0; i < 128; i++)
+		    {
+			    if(!NF_SPRITEOAM[screen][i].created)
+			    {
+				    // if made of many parts, ALL THE PARTS WILL BE AT THE SAME POSITION
+				    // so... adjust manually.
 				
-				NF_CreateSprite(screen, i, gfx_vram_id, pal_vram_id, pos_x, pos_y);
+				    NF_CreateSprite(screen, i, gfx_vram_id, pal_vram_id, pos_x, pos_y);
 
-				// if the order of its parts (if many) is straightforward (0, 1, 2, 3...)
-				// (IF NOT, adjust the parts/frames of each part manually).
-				if(!custom_part_order)
-				NF_SpriteFrame(screen, i, j);
+				    // if the order of its parts (if many) is straightforward (0, 1, 2, 3...)
+				    // (IF NOT, adjust the parts/frames of each part manually).
+				    if(!custom_part_order)
+				    NF_SpriteFrame(screen, i, j);
 
-				if(rotscale)
-				NF_EnableSpriteRotScale(screen, i, i, true);
+				    if(rotscale)
+				    NF_EnableSpriteRotScale(screen, i, i, true);
 
-				oam_id[j] = i;
-				break;
-			}
+				    oam_id[j] = i;
+				    break;
+			    }
 
-		}
-	}
+		    }
+	    }
 	}
 
 	void SimpleSprite::freeSpriteRAM()
