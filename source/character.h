@@ -4,10 +4,9 @@
 #include "input.h"
 #include "sprite.h"
 
-
 class Character
 {
-	public:
+public:
 	CHARACTERS char_id;
 	std::string char_name = "";
 	int walk_speed = 0;
@@ -15,7 +14,7 @@ class Character
 	int dodge_speed = 0;
 	int num_sprites = 0;
 
-    int frames = 0;
+	int frames = 0;
 	int map_pos_x = 0;
 	int map_pos_y = 0;
 	int last_idle_pos_x = 0;
@@ -52,23 +51,23 @@ class Character
 	bool can_dtap = false;
 	bool can_run = false;
 	bool can_dodge = false;
-	int last_tap_time_x = 0;  
-	int last_tap_time_y = 0;  
-    int double_tap_threshold = 15;
+	int last_tap_time_x = 0;
+	int last_tap_time_y = 0;
+	int double_tap_threshold = 15;
 	Sprite sprite;
 	Sprite shadow;
 
 	Sprite effects[NUM_EFFECTS];
 
-    // le methods.
+	// le methods.
 
 	void setupCharacter();
-    void setupSecondarySprites();
-    void mapToScreenPos(int, int);
-    void Jump();
-    void doubleTap();
-    void moveCharacter(int, int);
+	void setupSecondarySprites();
+	void mapToScreenPos(int, int);
+	void Jump();
+	void doubleTap();
+	void moveCharacter(int, int);
 	void updateCharacter(int, int);
 	void mapCollision(LEVELS current_lvl);
-    Character(CHARACTERS);
+	Character(CHARACTERS);
 };

@@ -16,12 +16,11 @@ touchPosition touch;
 // le input scan.
 void scanInput()
 {
-    scanKeys();
+	scanKeys();
 	touchRead(&touch);
 
-    if(keysDown() & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT))
-	last_dpad_key = keysDown();
-
+	if (keysDown() & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT))
+		last_dpad_key = keysDown();
 
 	key_pressed = keysDown();
 	key_held = keysHeld();

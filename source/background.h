@@ -3,10 +3,9 @@
 #include "libs.h"
 #include "enums.h"
 
-
 class LevelBackground
 {
-    public:
+public:
     int bg = 0;
     std::string bg_chunks[2];
     std::string bg_name = "";
@@ -38,7 +37,6 @@ class LevelBackground
 
     bool chunks_loaded[2] = {false, false}; // 2 'batches'.
 
-
     void setupBackground();
     void createBackground();
     void deleteBackground();
@@ -49,4 +47,3 @@ class LevelBackground
 
     LevelBackground(int bg_id);
 };
-

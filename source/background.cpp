@@ -4,9 +4,9 @@
 
 void LevelBackground::setupBackground()
 {
-    switch(bg)
+    switch (bg)
     {
-        case B_FROZEN_SUBURBS:
+    case B_FROZEN_SUBURBS:
 
         bg_name = "frozen_suburbs";
         bg_chunks[LEFT] = "frozen_suburbs_left";
@@ -18,13 +18,12 @@ void LevelBackground::setupBackground()
         layers[0] = 0;
         layers[1] = 1;
         screen = 0;
-        for(int i = 0; i < n_of_files; i++)
+        for (int i = 0; i < n_of_files; i++)
         {
             bg_dirs[i] = "bg/frozen_suburbs_" + std::to_string(i);
         }
         break;
     }
-
 }
 
 void LevelBackground::createBackground()
@@ -35,11 +34,10 @@ void LevelBackground::createBackground()
     // backgrounds nor show text; only sprites will be available.
     // DELETE IF CONSOLE DEBUG TEXT WANTED IN SUB SCREEN. (the right BG chunk will half-load as a result.)
     vramSetBankC(VRAM_C_MAIN_BG_0x06020000);
-    
 
     // creates left chunk.
     NF_LoadTiledBg(bg_dirs[chunk].c_str(), bg_dirs[chunk].c_str(), size_x, size_y);
-	NF_CreateTiledBg(screen, layers[LEFT], bg_dirs[chunk].c_str());
+    NF_CreateTiledBg(screen, layers[LEFT], bg_dirs[chunk].c_str());
 
     // creates right chunk.
     NF_LoadTiledBg(bg_dirs[chunk + 1].c_str(), bg_dirs[chunk + 1].c_str(), size_x, size_y);
@@ -53,8 +51,6 @@ void LevelBackground::createBackground()
     // wipes the right half of both backgrounds. avoids glitchy graphics on the empty half.
     deleteBGRightHalf(layers[0]);
     deleteBGRightHalf(layers[1]);
-
-
 }
 
 void LevelBackground::deleteBackground()
@@ -67,30 +63,28 @@ void LevelBackground::deleteBackground()
 // scroll system.
 void LevelBackground::updateScroll(int char_map_pos_x, int char_map_pos_y)
 {
-    if(scrolled)
+    if (scrolled)
     {
         int left_layer, right_layer;
 
         // caches scroll value in x to compare in future frames.
         prev_scroll_x = chunk_scroll_x;
 
-
         // determine scroll value for x and y.
-        if(char_map_pos_y >= 70 && char_map_pos_y <= 130)
+        if (char_map_pos_y >= 70 && char_map_pos_y <= 130)
         {
             map_scroll_y = char_map_pos_y - 70;
             chunk_scroll_y = map_scroll_y;
         }
 
-        if(char_map_pos_x >= 100)
+        if (char_map_pos_x >= 100)
         {
             map_scroll_x = char_map_pos_x - 100;
             chunk_scroll_x = map_scroll_x - (chunk * SCREEN_WIDTH);
         }
 
-
         // scroll the background.
-        if(!layers_swapped)
+        if (!layers_swapped)
         {
             left_layer = layers[0];
             right_layer = layers[1];
@@ -103,35 +97,34 @@ void LevelBackground::updateScroll(int char_map_pos_x, int char_map_pos_y)
         scrollNoLoop(screen, left_layer, chunk_scroll_x, chunk_scroll_y);
         scrollNoLoop(screen, right_layer, -SCREEN_WIDTH + chunk_scroll_x, chunk_scroll_y);
         NF_ShowBg(screen, layers[RIGHT]);
-
     }
 }
 
 void LevelBackground::scrollNoLoop(int screen, int layer, int scroll_x, int scroll_y)
 {
-    
-    if(screen == 0)
+
+    if (screen == 0)
     {
         // main screen.
-        switch(layer)
+        switch (layer)
         {
-            // update scroll registers of the used layer.
-            case 0:
-                REG_BG0HOFS = scroll_x;
-                REG_BG0VOFS = scroll_y;
-                break;
-            case 1:
-                REG_BG1HOFS = scroll_x;
-                REG_BG1VOFS = scroll_y;
-                break;
-            case 2:
-                REG_BG2HOFS = scroll_x;
-                REG_BG2VOFS = scroll_y;
-                break;
-            case 3:
-                REG_BG3HOFS = scroll_x;
-                REG_BG3VOFS = scroll_y;
-                break;
+        // update scroll registers of the used layer.
+        case 0:
+            REG_BG0HOFS = scroll_x;
+            REG_BG0VOFS = scroll_y;
+            break;
+        case 1:
+            REG_BG1HOFS = scroll_x;
+            REG_BG1VOFS = scroll_y;
+            break;
+        case 2:
+            REG_BG2HOFS = scroll_x;
+            REG_BG2VOFS = scroll_y;
+            break;
+        case 3:
+            REG_BG3HOFS = scroll_x;
+            REG_BG3VOFS = scroll_y;
+            break;
         }
     }
     else
@@ -139,75 +132,73 @@ void LevelBackground::scrollNoLoop(int screen, int layer, int scroll_x, int scro
         // sub screen.
         switch (layer)
         {
-            // same.
-            case 0:
-                REG_BG0HOFS_SUB = scroll_x;
-                REG_BG0VOFS_SUB = scroll_y;
-                break;
-            case 1:
-                REG_BG1HOFS_SUB = scroll_x;
-                REG_BG1VOFS_SUB = scroll_y;
-                break;
-            case 2:
-                REG_BG2HOFS_SUB = scroll_x;
-                REG_BG2VOFS_SUB = scroll_y;
-                break;
-            case 3:
-                REG_BG3HOFS_SUB = scroll_x;
-                REG_BG3VOFS_SUB = scroll_y;
-                break;
+        // same.
+        case 0:
+            REG_BG0HOFS_SUB = scroll_x;
+            REG_BG0VOFS_SUB = scroll_y;
+            break;
+        case 1:
+            REG_BG1HOFS_SUB = scroll_x;
+            REG_BG1VOFS_SUB = scroll_y;
+            break;
+        case 2:
+            REG_BG2HOFS_SUB = scroll_x;
+            REG_BG2VOFS_SUB = scroll_y;
+            break;
+        case 3:
+            REG_BG3HOFS_SUB = scroll_x;
+            REG_BG3VOFS_SUB = scroll_y;
+            break;
         }
     }
-
 }
 
 void LevelBackground::updateBackground(int char_map_pos_x, int char_map_pos_y)
 {
-    
+
     // helper variables.
     bool load_right_chunk = prev_scroll_x < SCREEN_WIDTH && chunk_scroll_x >= SCREEN_WIDTH;
     bool load_left_chunk = prev_scroll_x > 0 && chunk_scroll_x <= 0;
 
-     // next chunk.
-    if(load_right_chunk)
+    // next chunk.
+    if (load_right_chunk)
     {
         chunk++;
         new_right_chunk = true;
     }
-    else if(load_left_chunk && chunk > 0)
+    else if (load_left_chunk && chunk > 0)
     {
         chunk--;
         new_left_chunk = true;
     }
 
     // load first 'batch' of 16 chunks to RAM.
-    if(chunk < 15 && !chunks_loaded[LEFT])
+    if (chunk < 15 && !chunks_loaded[LEFT])
     {
-        for(int i = 0; i < 17; i++)
+        for (int i = 0; i < 17; i++)
         {
-            if(chunks_loaded[RIGHT])
-            NF_UnloadTiledBg(bg_dirs[i + 15].c_str());
+            if (chunks_loaded[RIGHT])
+                NF_UnloadTiledBg(bg_dirs[i + 15].c_str());
             NF_LoadTiledBg(bg_dirs[i].c_str(), bg_dirs[i].c_str(), size_x, size_y);
         }
         chunks_loaded[LEFT] = true;
         chunks_loaded[RIGHT] = false;
     }
     // load second 'batch' of the remaining chunks.
-    else if(chunk >= 15 && !chunks_loaded[RIGHT])
+    else if (chunk >= 15 && !chunks_loaded[RIGHT])
     {
-        for(int i = 0; i < 17; i++)
+        for (int i = 0; i < 17; i++)
         {
-            if(chunks_loaded[LEFT])
-            NF_UnloadTiledBg(bg_dirs[i].c_str());
+            if (chunks_loaded[LEFT])
+                NF_UnloadTiledBg(bg_dirs[i].c_str());
             NF_LoadTiledBg(bg_dirs[i + 15].c_str(), bg_dirs[i + 15].c_str(), size_x, size_y);
         }
         chunks_loaded[LEFT] = false;
         chunks_loaded[RIGHT] = true;
     }
 
-
     // if a new chunk must be loaded...
-    if(((load_right_chunk) || (load_left_chunk)) && map_scroll_x > 0)
+    if (((load_right_chunk) || (load_left_chunk)) && map_scroll_x > 0)
     {
         // helper variable.
         int layer_to_delete;
@@ -215,24 +206,23 @@ void LevelBackground::updateBackground(int char_map_pos_x, int char_map_pos_y)
         new_chunk = true;
 
         // if layer 0 = left, and layer 1 = right...
-        if(!layers_swapped)
+        if (!layers_swapped)
         {
-            layer_to_delete = (load_right_chunk)? layers[0] : layers[1];
+            layer_to_delete = (load_right_chunk) ? layers[0] : layers[1];
         }
         else
         {
-            layer_to_delete = (load_left_chunk)? layers[0] : layers[1];
+            layer_to_delete = (load_left_chunk) ? layers[0] : layers[1];
         }
 
         // delete and create the needed chunk in the correspondant layer.
         NF_DeleteTiledBg(screen, layer_to_delete);
         NF_CreateTiledBg(screen, layer_to_delete,
-                        (load_right_chunk)? 
-                        bg_dirs[chunk + 1].c_str() :  bg_dirs[chunk].c_str());
+                         (load_right_chunk) ? bg_dirs[chunk + 1].c_str() : bg_dirs[chunk].c_str());
 
         // swap the layers order after each chunk is loaded.
         layers_swapped = !layers_swapped;
-        
+
         // clean the right half of each chunk.
         deleteBGRightHalf(layers[0]);
         deleteBGRightHalf(layers[1]);
@@ -255,14 +245,12 @@ void LevelBackground::updateBackground(int char_map_pos_x, int char_map_pos_y)
 void LevelBackground::deleteBGRightHalf(int layer)
 {
     // creates pointer to the position in memory where the maps begin to be stored.
-    u16* map = (u16*)(0x6000000 + (NF_TILEDBG_LAYERS[screen][layer].mapbase << 11));
+    u16 *map = (u16 *)(0x6000000 + (NF_TILEDBG_LAYERS[screen][layer].mapbase << 11));
 
     // sets to 0 the positions corresponding to the right half.
-    for(int i = 1025; i < 2048; i++)
+    for (int i = 1025; i < 2048; i++)
         *(map + i) = 0;
 }
-
-
 
 LevelBackground::LevelBackground(int bg_id)
 {

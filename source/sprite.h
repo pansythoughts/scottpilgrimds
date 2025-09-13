@@ -3,14 +3,11 @@
 #include "libs.h"
 #include "enums.h"
 
-
-
 // le constants.
 
 constexpr uint8_t MAX_NUMBER_SPRITES = 20; //!!! ESTA WEA hace que se genere abajo varios arrays de tamaño lo que sea que valga esta wea, aunque no se ocupe. lo mejor seria hacer algun tipo de array dinamico.
 constexpr uint8_t CHAR_SCREEN_SIZE = 190;
 constexpr uint8_t NUM_EFFECTS = 2;
-
 
 // LEEME WEON!!!!!!!!!!!!!!!!1111111111111111111 //
 
@@ -25,10 +22,9 @@ constexpr uint8_t NUM_EFFECTS = 2;
 // (pa los distintos estados del personaje, por ejemplo), pero que la otra sea para sprites que
 // solo son una 'imagen' realmente.
 
-
 class Sprite
 {
-	public: 
+public:
 	bool animated = false;
 	int num_sprites = 0;
 	int gfx_id[MAX_NUMBER_SPRITES];
@@ -42,7 +38,7 @@ class Sprite
 	int anim_frame_period[MAX_NUMBER_SPRITES];
 	int anim_direction = 1;
 	int n_frames[MAX_NUMBER_SPRITES];
-    int anim_status = 0;
+	int anim_status = 0;
 	int past_anim_status = 0;
 	bool anim_status_changed = false;
 	std::string sprite_name = "";
@@ -51,7 +47,7 @@ class Sprite
 	int scale_f = 0;
 	int rot = 0;
 	int slot_id = 0;
-	std::string sprite_dir[MAX_NUMBER_SPRITES]; //Un espacio para cada sprite del personaje.
+	std::string sprite_dir[MAX_NUMBER_SPRITES]; // Un espacio para cada sprite del personaje.
 	std::string palette_dir[MAX_NUMBER_SPRITES];
 	int screen = 0;
 	int screen_pos_x = 0;
@@ -66,25 +62,25 @@ class Sprite
 	bool rotscale = false;
 	int n_of_sprites = 0;
 
-    void assignSpriteDirs();
-    void assignSpritesRAM();
+	void assignSpriteDirs();
+	void assignSpritesRAM();
 	void assignSpritesVRAM();
-    void freeSpritesRAM();
+	void freeSpritesRAM();
 	void freeSpritesVRAM();
-    void changeScreen();
-    void createSprite();
+	void changeScreen();
+	void createSprite();
 	void deleteSprite();
 	void createMirroredSprite();
-    void animateSprite();
-    void updateSpriteAndPalette();
-    void updateSprite();
-    void setupSprite();
+	void animateSprite();
+	void updateSpriteAndPalette();
+	void updateSprite();
+	void setupSprite();
 	void setupSprite(CHARACTERS);
 };
 
 class SimpleSprite
 {
-	public:
+public:
 	int screen = 0;
 	int frame = 0;
 	int size_x = 0;
@@ -100,7 +96,7 @@ class SimpleSprite
 	std::string sprite_dir = "sprite/";
 	std::string palette_dir = "palette/";
 	std::string name = "";
-	
+
 	bool flipped = false;
 	bool rotscale = false;
 	bool made_of_many = false;
@@ -114,7 +110,6 @@ class SimpleSprite
 	void createSprite(int, int);
 	void deleteSprite();
 	void setupSprite();
-
 
 	SimpleSprite(int screen, int size_x, int size_y, std::string name, bool rotscale, int num_of_parts, bool custom_part_order);
 };

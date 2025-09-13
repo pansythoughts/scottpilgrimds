@@ -10,7 +10,7 @@
 
 class Game
 {
-    public:
+public:
     GAME_STATES game_state = TITLE_SCREEN; // if debugging, change this to whichever state you want when boot.
     GAME_STATES past_game_state;
     LEVELS current_level = L_FROZEN_SUBURBS;
@@ -26,7 +26,7 @@ class Game
     int brightness = 0;
     float lvl_scroll_factor = 0;
 
-    bool debug = false; // change this to allow for debug. 
+    bool debug = false; // change this to allow for debug.
                         // ALSO make sure that there is a VRAM bank set to sub screen BG.
 
     bool level_init = false;
@@ -43,12 +43,10 @@ class Game
     SimpleSprite *scroll_arrow;
     SimpleSprite *scroll_bar;
 
-
     void initGame();
     void updateGame();
     void fadeIn(int screen);
     void levelInCutscene();
     void levelLowerUI();
     Game();
-
 };

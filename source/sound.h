@@ -5,8 +5,7 @@
 
 class Song
 {
-    public:
-
+public:
     int chunk_duration = 20; // seconds;
     int last_chunk_duration = 0;
 
@@ -18,7 +17,6 @@ class Song
     volatile int timer = 0;
     int chunk_time_passed = 0;
     bool playing = false;
-
 
     void setupSong();
     void loadChunkRAM();
