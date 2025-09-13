@@ -8,6 +8,11 @@ nfdocs/
 nflib/
 build/
 
+assets/kim.png
+assets/effects.png
+assets/frozen_suburs.png
+assets/title_screen.png
+
 fixes.txt
 
 *.nds

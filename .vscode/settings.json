@@ -111,5 +111,6 @@
     "thread": "cpp",
     "coroutine": "c"
   },
-  "C_Cpp.errorSquiggles": "disabled"
+  "C_Cpp.errorSquiggles": "disabled",
+  "makefile.configureOnOpen": true
 }
