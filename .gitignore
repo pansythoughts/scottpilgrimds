@@ -6,6 +6,7 @@ gritt/
 libnds/
 nfdocs/
 nflib/
+build/
 
 fixes.txt
 
