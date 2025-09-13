@@ -1,0 +1,32 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build NDS ROM",
+      "type": "shell",
+      "command": "cmd.exe",
+      "args": [
+        "/c",
+        "\"C:\\msys64\\opt\\wonderful\\wonderful_shell.cmd -c \\\"cd '${workspaceFolder}' && make && start '${workspaceFolder}/scottpilgrimds.nds'; echo; echo when; read -n1\\\"\""
+      ],
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false,
+        "close": false
+      }
+      
+    }
+  ]
+}

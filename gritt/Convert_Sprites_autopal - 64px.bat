@@ -1,0 +1,17 @@
+@echo off
+cls
+
+del sprites\*.img
+del sprites\*.map
+del sprites\*.pal
+del h\*.h
+
+grit.exe bmp\*.png -g -gT00FF00 -p -ftb -Mw8 -Mh8
+
+for /f "delims==" %%F in ('dir /b *.bin') do ren "%%~nxF" "%%~nF"
+move *.img sprites
+move *.pal sprites
+del *.map
+move *.h h
+pause
+exit

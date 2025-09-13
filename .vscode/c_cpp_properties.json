@@ -1,0 +1,40 @@
+{
+  "configurations": [
+    {
+      "name": "windows-gcc-x64",
+      "includePath": [
+        "${workspaceFolder}/**",
+        "C:/msys64/opt/wonderful/toolchain/gcc-arm-none-eabi/include/**",
+        "C:/msys64/opt/wonderful/thirdparty/blocksds/core/libs/libnds/include/**",
+        "C:/msys64/opt/wonderful/thirdparty/blocksds/external/nflib/include/**",
+        "C:/msys64/opt/wonderful/thirdparty/blocksds/external/nitro-engine/include/**"
+      ],
+      "defines": [
+        "_DEBUG",
+        "_UNICODE",
+        "WIN32",
+        "ARM7",
+        "ARM9"
+      ],
+      "browse": {
+        "path": [
+          "${workspaceFolder}/**",
+          "C:/msys64/opt/wonderful/toolchain/gcc-arm-none-eabi/include/**",
+          "C:/msys64/opt/wonderful/thirdparty/blocksds/core/libs/libnds/include/**",
+          "C:/msys64/opt/wonderful/thirdparty/blocksds/external/nflib/include/**",
+          "C:/msys64/opt/wonderful/thirdparty/blocksds/external/nitro-engine/include/**"
+        ],
+        "limitSymbolsToIncludedHeaders": true,
+        "databaseFilename": ""
+      },
+      "compilerPath": "C:/msys64/opt/wonderful/toolchain/gcc-arm-none-eabi/bin/arm-none-eabi-g++.exe",
+      "cStandard": "${default}",
+      "cppStandard": "${default}",
+      "intelliSenseMode": "linux-gcc-arm",
+      "compilerArgs": [
+        ""
+      ]
+    }
+  ],
+  "version": 4
+}

@@ -1,0 +1,5 @@
+docs/
+lib/
+build/
+*.nds
+*.elf
